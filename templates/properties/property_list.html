@@ -1,0 +1,722 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Marvel Safari Essence — Elevated Stays, Tours, and Stories{% endblock %}
+
+{% block meta_description %}Premier African travel marketplace: luxury stays, curated tours, real-time availability, and inspiring stories to plan your next escape.{% endblock %}
+
+{% block content %}
+
+<!-- Hero: premium tourism vibe with immediate blog/storytelling and search -->
+<section class="relative overflow-hidden bg-gradient-to-br from-[#0b1f2e] via-[#0f2d3f] to-[#123754] text-white">
+    <div class="absolute inset-0 opacity-20" style="background-image:url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=80'); background-size:cover; background-position:center;"></div>
+    <div class="absolute inset-0 bg-gradient-to-tr from-black/40 via-[#0b1f2e]/60 to-transparent"></div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+        <div class="grid lg:grid-cols-12 gap-10 items-start">
+            <div class="lg:col-span-7 space-y-6 animate-fade-in">
+                <p class="text-xs uppercase tracking-[0.35em] text-[#f6b17a] font-semibold">Marvel Safari Essence</p>
+                <h1 class="font-display text-4xl md:text-6xl lg:text-6xl leading-tight">Where luxury stays meet cinematic safaris.</h1>
+                <p class="text-lg md:text-xl text-white/85 max-w-3xl">Book with real-time availability, bundle cars and tours, and explore editorial stories crafted for travelers chasing rare, unforgettable Africa.</p>
+                <div class="flex flex-wrap gap-3">
+                    <span class="badge badge-warning bg-white/10 border border-white/15 text-white"><i class="fa-solid fa-shield-halved"></i> Trusted hosts</span>
+                    <span class="badge badge-success bg-white/10 border border-white/15 text-white"><i class="fa-solid fa-sparkles"></i> Curated luxury & eco stays</span>
+                    <span class="badge badge-info bg-white/10 border border-white/15 text-white"><i class="fa-solid fa-wifi"></i> Real-time availability</span>
+                </div>
+            </div>
+
+            <div class="lg:col-span-5 animate-slide-up">
+                <div class="card card-body bg-white/95 backdrop-blur-sm shadow-2xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase">Plan your trip</p>
+                            <h3 class="text-xl font-bold text-gray-900">Book stays, tours, cars</h3>
+                        </div>
+                        <span class="badge badge-neutral"><i class="fa-solid fa-bolt"></i> Live inventory</span>
+                    </div>
+                    <form method="get" action="{% url 'properties:search' %}" class="space-y-5">
+                        <div class="flex flex-wrap gap-2 text-xs font-semibold">
+                            <button type="button" class="btn btn-primary btn-sm"><i class="fa-solid fa-hotel"></i> Stays</button>
+                            <a href="{% url 'tours:tour_list' %}" class="btn btn-ghost btn-sm"><i class="fa-solid fa-mountain-sun"></i> Tours</a>
+                            <a href="{% url 'car_rentals:car_list' %}" class="btn btn-ghost btn-sm"><i class="fa-solid fa-car"></i> Cars</a>
+                            <a href="{% url 'blog:post_list' %}" class="btn btn-ghost btn-sm"><i class="fa-solid fa-pen-nib"></i> Stories</a>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="sm:col-span-2">
+                                <label class="form-label"><i class="fa-solid fa-location-dot text-[#0b1f2e]"></i> Destination or property</label>
+                                <input type="text" name="q" value="{{ query }}" placeholder="Cape Town, Serengeti, or lodge name" class="form-input" list="destinations" autocomplete="off">
+                                <datalist id="destinations">
+                                    <option value="Nairobi, Kenya">
+                                    <option value="Serengeti, Tanzania">
+                                    <option value="Cape Town, South Africa">
+                                    <option value="Masai Mara, Kenya">
+                                    <option value="Victoria Falls, Zimbabwe">
+                                    <option value="Zanzibar, Tanzania">
+                                </datalist>
+                            </div>
+                            <div>
+                                <label class="form-label"><i class="fa-solid fa-calendar text-[#0b1f2e]"></i> Check-in</label>
+                                <input type="date" name="check_in" class="form-input" value="{{ request.GET.check_in }}" min="{{ today|date:'Y-m-d' }}">
+                            </div>
+                            <div>
+                                <label class="form-label"><i class="fa-solid fa-calendar-days text-[#0b1f2e]"></i> Check-out</label>
+                                <input type="date" name="check_out" class="form-input" value="{{ request.GET.check_out }}" min="{{ today|date:'Y-m-d' }}">
+                            </div>
+                            <div>
+                                <label class="form-label"><i class="fa-solid fa-user-group text-[#0b1f2e]"></i> Guests</label>
+                                <select name="guests" class="form-input">
+                                    <option value="1" {% if request.GET.guests == '1' %}selected{% endif %}>1 Guest</option>
+                                    <option value="2" {% if request.GET.guests == '2' %}selected{% endif %}>2 Guests</option>
+                                    <option value="3" {% if request.GET.guests == '3' %}selected{% endif %}>3 Guests</option>
+                                    <option value="4" {% if request.GET.guests == '4' %}selected{% endif %}>4 Guests</option>
+                                    <option value="5" {% if request.GET.guests == '5' %}selected{% endif %}>5+ Guests</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label"><i class="fa-solid fa-tag text-[#0b1f2e]"></i> Flexible dates</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="checkbox" id="flexible-dates" name="flexible_dates" class="rounded text-[#0b1f2e]">
+                                    <label for="flexible-dates" class="text-sm text-gray-600">Show nearby dates</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg w-full justify-center"><i class="fa-solid fa-magnifying-glass"></i> Search availability</button>
+                    </form>
+                    <div class="mt-4 flex items-center justify-between text-xs text-gray-600">
+                        <span><i class="fa-solid fa-lock"></i> Secure checkout</span>
+                        <span><i class="fa-solid fa-headset"></i> Live concierge</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Blog highlights carousel row -->
+        <div class="mt-12">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <p class="text-xs uppercase tracking-[0.2em] text-[#f6b17a] font-semibold">Stories first</p>
+                    <h3 class="text-2xl font-display">Fresh from the journal</h3>
+                </div>
+                <a href="{% url 'blog:post_list' %}" class="text-sm font-semibold text-[#f6b17a] hover:text-white transition">View all stories →</a>
+            </div>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% with posts=featured_posts|default:latest_posts %}
+                    {% if posts %}
+                        {% for post in posts|slice:":3" %}
+                            <a href="{{ post.get_absolute_url }}" class="card card-hover bg-white/10 border border-white/10 p-4 flex flex-col justify-between h-full">
+                                <div>
+                                    <p class="text-xs text-[#f6b17a] uppercase tracking-wide mb-2">{{ post.category.name|default:"Insight" }}</p>
+                                    <h4 class="text-lg font-semibold mb-2">{{ post.title }}</h4>
+                                    <p class="text-sm text-white/80 line-clamp-3">{{ post.excerpt|default:post.summary|default:post.content|truncatewords:26 }}</p>
+                                </div>
+                                <div class="mt-4 flex items-center justify-between text-xs text-white/70">
+                                    <span><i class="fa-regular fa-clock"></i> {{ post.published_at|date:'M d, Y' }}</span>
+                                    <span>Read →</span>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    {% else %}
+                        {% for item in "123" %}
+                            <div class="card bg-white/10 border border-white/10 p-4">
+                                <p class="text-xs text-[#f6b17a] uppercase tracking-wide mb-2">Editorial</p>
+                                <h4 class="text-lg font-semibold mb-2">Safari season intel</h4>
+                                <p class="text-sm text-white/80">Get inspired by curated guides to migration hotspots, coastal escapes, and starry desert lodges.</p>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- All Stays (paginated) -->
+<section class="py-16 bg-white border-t border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h2 class="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-2">All stays</h2>
+                <p class="text-gray-600">Browse every verified property with live availability.</p>
+            </div>
+            <div class="hidden md:flex items-center gap-2 text-sm text-gray-600">
+                <span class="font-semibold text-[#0b1f2e]">{{ page_obj.paginator.count }}</span>
+                <span>places</span>
+            </div>
+        </div>
+
+        {% if properties %}
+            <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {% for property in properties %}
+                    <article class="card card-hover overflow-hidden h-full flex flex-col">
+                        <div class="relative h-52 overflow-hidden">
+                            {% with primary_image=property.get_primary_image %}
+                                {% if primary_image %}
+                                    {% with image_url=primary_image.get_thumbnail_url %}
+                                        {% if image_url %}
+                                            <img src="{{ image_url }}" alt="{{ primary_image.alt_text|default:property.name }}" class="w-full h-full object-cover" loading="lazy">
+                                        {% else %}
+                                            <div class="w-full h-full bg-gradient-to-br from-[#123754] to-[#0b1f2e] flex items-center justify-center">
+                                                <i class="fa-solid fa-hotel text-4xl text-white/50"></i>
+                                            </div>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% else %}
+                                    <div class="w-full h-full bg-gradient-to-br from-[#123754] to-[#0b1f2e] flex items-center justify-center">
+                                        <i class="fa-solid fa-hotel text-4xl text-white/50"></i>
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                            <div class="absolute top-3 left-3 flex gap-2">
+                                {% if property.is_featured %}<span class="badge badge-warning shadow"><i class="fa-solid fa-star"></i> Featured</span>{% endif %}
+                                {% if property.is_verified %}<span class="badge badge-neutral shadow"><i class="fa-solid fa-shield-check"></i> Verified</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="p-5 flex-1 flex flex-col gap-3">
+                            <div class="flex items-start justify-between gap-2">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900 leading-tight hover:text-[#0b1f2e] transition"><a href="{% url 'properties:detail' property.slug %}">{{ property.name }}</a></h3>
+                                    <p class="text-sm text-gray-600 flex items-center gap-1.5"><i class="fa-solid fa-location-dot text-[#0b1f2e]"></i>{{ property.city }}, {{ property.country.name|default:property.country }}</p>
+                                </div>
+                                <div class="text-right">
+                                    <div class="inline-flex items-center gap-1 text-white bg-[#0b1f2e] px-2.5 py-1 rounded-lg text-sm font-bold">
+                                        <span>{{ property.average_rating|default:"New"|floatformat:1 }}</span>
+                                        {% if property.average_rating %}<i class="fa-solid fa-star text-[#f6b17a]"></i>{% endif %}
+                                    </div>
+                                    <p class="text-[11px] text-gray-500 mt-1">{{ property.num_reviews|default:"0" }} reviews</p>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-700 line-clamp-2">{{ property.description|truncatewords:18 }}</p>
+                            <div class="flex flex-wrap gap-2 text-xs text-gray-600">
+                                {% for amenity in property.amenities.all|slice:":3" %}
+                                    <span class="badge badge-neutral">{{ amenity.name }}</span>
+                                {% empty %}
+                                    <span class="badge badge-neutral">Essentials included</span>
+                                {% endfor %}
+                            </div>
+                            <div class="flex items-end justify-between mt-auto pt-3 border-t border-gray-100">
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase tracking-wide">From</p>
+                                    <p class="text-2xl font-display font-bold text-[#0b1f2e]">${{ property.minimum_price|default:'—' }}<span class="text-sm font-normal text-gray-600">/night</span></p>
+                                </div>
+                                <a href="{% url 'properties:detail' property.slug %}" class="btn btn-primary btn-sm">See details</a>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+
+            {% if is_paginated %}
+                <div class="mt-10 flex items-center justify-between">
+                    <div class="text-sm text-gray-600">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</div>
+                    <div class="flex items-center gap-2">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-ghost btn-sm">← Previous</a>
+                        {% endif %}
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}" class="btn btn-ghost btn-sm">Next →</a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="card card-body text-center py-16">
+                <i class="fa-solid fa-hotel text-5xl text-gray-300 mb-3"></i>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">No stays found</h3>
+                <p class="text-gray-600 mb-6">Adjust filters or explore featured stays above.</p>
+                <a href="{% url 'properties:search' %}" class="btn btn-primary">Open advanced search</a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Platform Stats -->
+<section class="bg-white py-12 border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="card card-body text-center hover-lift">
+                <div class="text-4xl font-display font-bold text-[#0b1f2e] mb-2">{{ total_properties }}</div>
+                <p class="text-sm text-gray-600 font-semibold">Verified Properties</p>
+                <p class="text-xs text-gray-500 mt-1">Across Africa</p>
+            </div>
+            <div class="card card-body text-center hover-lift">
+                <div class="text-4xl font-display font-bold text-[#0b1f2e] mb-2">{{ total_cities }}</div>
+                <p class="text-sm text-gray-600 font-semibold">Cities</p>
+                <p class="text-xs text-gray-500 mt-1">Top destinations</p>
+            </div>
+            <div class="card card-body text-center hover-lift">
+                <div class="text-4xl font-display font-bold text-[#0b1f2e] mb-2">{{ total_countries }}</div>
+                <p class="text-sm text-gray-600 font-semibold">Countries</p>
+                <p class="text-xs text-gray-500 mt-1">Continental reach</p>
+            </div>
+            <div class="card card-body text-center hover-lift">
+                <div class="text-4xl font-display font-bold text-[#0b1f2e] mb-2">{{ total_bookings }}</div>
+                <p class="text-sm text-gray-600 font-semibold">Bookings</p>
+                <p class="text-xs text-gray-500 mt-1">Last 30 days</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Bundled experiences (properties + tours + cars) -->
+<section class="py-16 bg-gradient-to-b from-white to-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between mb-10">
+            <div>
+                <p class="text-xs uppercase tracking-[0.2em] text-[#0b1f2e] font-semibold">Bundles</p>
+                <h2 class="font-display text-3xl md:text-4xl font-bold text-gray-900">Design your own package</h2>
+                <p class="text-gray-600">Pair your stay with private drivers and signature tours.</p>
+            </div>
+            <div class="hidden md:flex gap-3">
+                <a href="{% url 'tours:tour_list' %}" class="btn btn-secondary"><i class="fa-solid fa-mountain"></i> Tours</a>
+                <a href="{% url 'car_rentals:car_list' %}" class="btn btn-ghost"><i class="fa-solid fa-car"></i> Cars</a>
+            </div>
+        </div>
+        <div class="grid md:grid-cols-3 gap-6">
+            <div class="card card-hover p-6 bg-white">
+                <div class="flex items-center gap-3 mb-3"><span class="badge badge-warning"><i class="fa-solid fa-route"></i> Classic Safari</span></div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Lodge + game drive + driver</h3>
+                <p class="text-sm text-gray-600 mb-4">Curated three-night escapes with vetted guides and live vehicle availability.</p>
+                <a href="{% url 'tours:tour_list' %}" class="btn btn-primary btn-sm">View safari tours</a>
+            </div>
+            <div class="card card-hover p-6 bg-white">
+                <div class="flex items-center gap-3 mb-3"><span class="badge badge-info"><i class="fa-solid fa-umbrella-beach"></i> Coast & City</span></div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Boutique stays + coastal drives</h3>
+                <p class="text-sm text-gray-600 mb-4">Fly-and-drive pairings with executive cars, airport pickup, and same-day confirmations.</p>
+                <a href="{% url 'car_rentals:car_list' %}" class="btn btn-primary btn-sm">See cars</a>
+            </div>
+            <div class="card card-hover p-6 bg-white">
+                <div class="flex items-center gap-3 mb-3"><span class="badge badge-success"><i class="fa-solid fa-person-hiking"></i> Tailor-made</span></div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Custom bundle with concierge</h3>
+                <p class="text-sm text-gray-600 mb-4">Tell us your dates; we assemble stays, tours, and vehicles with availability locked in.</p>
+                <a href="{% url 'ai:support_chatbot_page' %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-message"></i> Ask the concierge</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Trending Destinations -->
+<section class="py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h2 class="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-3">Trending Destinations</h2>
+            <p class="text-gray-600 text-lg">Seasonal hotspots with exceptional hosts.</p>
+        </div>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% if popular_destinations %}
+                {% for destination in popular_destinations %}
+                    <a href="{% url 'properties:search' %}?q={{ destination.city|urlencode }}" class="card card-hover overflow-hidden group">
+                        <div class="relative h-64 overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-br {% cycle 'from-[#f6b17a] to-[#e89c60]' 'from-[#0b1f2e] to-[#123754]' 'from-[#2d6a4f] to-[#0b4a34]' 'from-[#3a86ff] to-[#184e77]' %}"></div>
+                            <div class="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors"></div>
+                            <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+                                <h3 class="font-display text-2xl font-bold mb-1">{{ destination.city }}</h3>
+                                <p class="text-sm text-white/90">{{ destination.total }}+ properties</p>
+                            </div>
+                            {% if forloop.first %}
+                            <div class="absolute top-4 right-4">
+                                <span class="badge badge-warning"><i class="fa-solid fa-fire"></i> Hot</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </a>
+                {% endfor %}
+            {% else %}
+                <a href="{% url 'properties:search' %}?q=Masai+Mara" class="card card-hover overflow-hidden group">
+                    <div class="relative h-64 overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-br from-[#f6b17a] to-[#e89c60]"></div>
+                        <div class="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors"></div>
+                        <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+                            <h3 class="font-display text-2xl font-bold mb-1">Masai Mara</h3>
+                            <p class="text-sm text-white/90">Kenya</p>
+                        </div>
+                        <div class="absolute top-4 right-4">
+                            <span class="badge badge-warning"><i class="fa-solid fa-fire"></i> Hot</span>
+                        </div>
+                    </div>
+                </a>
+                <a href="{% url 'properties:search' %}?q=Serengeti" class="card card-hover overflow-hidden group">
+                    <div class="relative h-64 overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-br from-[#123754] to-[#0b1f2e]"></div>
+                        <div class="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors"></div>
+                        <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+                            <h3 class="font-display text-2xl font-bold mb-1">Serengeti</h3>
+                            <p class="text-sm text-white/90">Tanzania</p>
+                        </div>
+                    </div>
+                </a>
+                <a href="{% url 'properties:search' %}?q=Cape+Town" class="card card-hover overflow-hidden group">
+                    <div class="relative h-64 overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-br from-[#2d6a4f] to-[#0b4a34]"></div>
+                        <div class="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors"></div>
+                        <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+                            <h3 class="font-display text-2xl font-bold mb-1">Cape Town</h3>
+                            <p class="text-sm text-white/90">South Africa</p>
+                        </div>
+                    </div>
+                </a>
+            {% endif %}
+        </div>
+        <div class="text-center mt-10">
+            <a href="{% url 'properties:search' %}" class="btn btn-secondary btn-lg"><i class="fa-solid fa-map-location-dot"></i> Explore all destinations</a>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Properties -->
+<section class="py-16 bg-gradient-to-b from-white to-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between mb-10">
+            <div>
+                <h2 class="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-2">Featured Stays</h2>
+                <p class="text-gray-600">Handpicked lodges, villas, and boutique hotels.</p>
+            </div>
+            <a href="{% url 'properties:search' %}" class="hidden md:inline-flex btn btn-ghost">View all <i class="fa-solid fa-arrow-right ml-2"></i></a>
+        </div>
+
+        {% if featured_properties %}
+            <div class="space-y-6">
+                {% for property in featured_properties %}
+                    <article class="card card-hover overflow-hidden">
+                        <div class="grid md:grid-cols-12 gap-0">
+                            <div class="md:col-span-5 relative">
+                                {% with primary_image=property.get_primary_image %}
+                                    {% if primary_image %}
+                                        {% with image_url=primary_image.get_thumbnail_url %}
+                                            {% if image_url %}
+                                                <img src="{{ image_url }}" alt="{{ primary_image.alt_text|default:property.name }}" class="h-64 md:h-full w-full object-cover" loading="lazy">
+                                            {% else %}
+                                                <div class="h-64 md:h-full bg-gradient-to-br from-[#123754] to-[#0b1f2e] flex items-center justify-center">
+                                                    <i class="fa-solid fa-hotel text-6xl text-white/50"></i>
+                                                </div>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% else %}
+                                        <div class="h-64 md:h-full bg-gradient-to-br from-[#123754] to-[#0b1f2e] flex items-center justify-center">
+                                            <i class="fa-solid fa-hotel text-6xl text-white/50"></i>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                                <div class="absolute top-4 left-4 flex flex-col gap-2">
+                                    {% if property.is_featured %}<span class="badge badge-warning shadow-lg"><i class="fa-solid fa-star"></i> Featured</span>{% endif %}
+                                    {% if property.average_rating and property.average_rating >= 4.5 %}<span class="badge badge-success shadow-lg"><i class="fa-solid fa-award"></i> Top rated</span>{% endif %}
+                                </div>
+                            </div>
+                            <div class="md:col-span-7 p-6 flex flex-col justify-between">
+                                <div>
+                                    <div class="flex items-start justify-between gap-4 mb-4">
+                                        <div>
+                                            <h3 class="text-xl font-bold text-gray-900 mb-1 hover:text-[#0b1f2e] transition"><a href="{% url 'properties:detail' property.slug %}">{{ property.name }}</a></h3>
+                                            <p class="text-sm text-gray-600 flex items-center gap-1.5"><i class="fa-solid fa-location-dot text-[#0b1f2e]"></i>{{ property.city }}, {{ property.country.name|default:property.country }}</p>
+                                        </div>
+                                        <div class="text-right flex-shrink-0">
+                                            <div class="flex items-center gap-1 text-white bg-[#0b1f2e] px-3 py-1.5 rounded-lg font-bold text-sm">
+                                                <span>{{ property.average_rating|default:"New"|floatformat:1 }}</span>
+                                                {% if property.average_rating %}<i class="fa-solid fa-star text-[#f6b17a]"></i>{% endif %}
+                                            </div>
+                                            <p class="text-xs text-gray-500 mt-1">{{ property.num_reviews|default:"0" }} reviews</p>
+                                        </div>
+                                    </div>
+                                    <p class="text-gray-700 text-sm leading-relaxed mb-4 line-clamp-2">{{ property.description|truncatewords:25 }}</p>
+                                    <div class="flex flex-wrap gap-2 mb-4">
+                                        {% for amenity in property.amenities.all|slice:":5" %}
+                                            <span class="badge badge-neutral">{{ amenity.name }}</span>
+                                        {% empty %}
+                                            <span class="badge badge-neutral">No amenities listed</span>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="flex flex-wrap gap-3 text-xs text-gray-600">
+                                        <span class="badge badge-success"><i class="fa-solid fa-check"></i> Free cancellation</span>
+                                        <span class="badge badge-info"><i class="fa-solid fa-bolt"></i> Instant confirmation</span>
+                                        {% if property.is_verified %}<span class="badge badge-neutral"><i class="fa-solid fa-shield-check"></i> Verified</span>{% endif %}
+                                    </div>
+                                </div>
+                                <div class="mt-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 pt-4 border-t border-gray-100">
+                                    <div>
+                                        <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">From</p>
+                                        <p class="text-3xl font-display font-bold text-[#0b1f2e]">${{ property.minimum_price|default:'N/A' }} <span class="text-sm font-normal text-gray-600">/night</span></p>
+                                        <p class="text-xs text-gray-500">Taxes may apply</p>
+                                    </div>
+                                    <a href="{% url 'properties:detail' property.slug %}" class="btn btn-primary">See availability <i class="fa-solid fa-arrow-right"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+            <div class="text-center mt-10 md:hidden">
+                <a href="{% url 'properties:search' %}" class="btn btn-secondary btn-lg w-full">View all properties <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+        {% else %}
+            <div class="card card-body text-center py-16">
+                <i class="fa-solid fa-hotel text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">No properties available yet</h3>
+                <p class="text-gray-600 mb-6">Check back soon for amazing safari accommodations</p>
+                {% if user.is_authenticated and user.is_staff or user.is_authenticated and user.is_superuser or user.is_authenticated and user.role == 'host' %}
+                    <a href="{% url 'properties:create' %}" class="btn btn-primary inline-flex"><i class="fa-solid fa-plus-circle"></i> List your property</a>
+                {% elif user.is_authenticated %}
+                    <a href="{% url 'accounts:enable_business' %}" class="btn btn-primary inline-flex"><i class="fa-solid fa-user-plus"></i> Become a host</a>
+                {% else %}
+                    <a href="{% url 'accounts:login' %}?next={% url 'properties:create' %}" class="btn btn-primary inline-flex"><i class="fa-solid fa-right-to-bracket"></i> Sign in to host</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<section class="py-16 bg-gradient-to-b from-gray-50 to-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h2 class="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-3">
+                Why Choose Marvel Safari
+            </h2>
+            <p class="text-gray-600 text-lg">The trusted platform for African travel experiences</p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8">
+            <!-- Feature 1 -->
+            <div class="card card-body text-center hover-lift">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-[#003580] to-[#0057b8] flex items-center justify-center text-white text-2xl mx-auto mb-4">
+                    <i class="fa-solid fa-shield-check"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-3">Verified Properties</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    Every property is personally verified by our team. Book with confidence knowing you'll get exactly what you see.
+                </p>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="card card-body text-center hover-lift">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-[#feba02] to-[#ffd966] flex items-center justify-center text-[#003580] text-2xl mx-auto mb-4">
+                    <i class="fa-solid fa-headset"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-3">24/7 Support</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    Our expert travel advisors are available around the clock to help you plan and manage your African adventure.
+                </p>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="card card-body text-center hover-lift">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white text-2xl mx-auto mb-4">
+                    <i class="fa-solid fa-tag"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-3">Best Price Guarantee</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    Find a lower price elsewhere? We'll match it and give you an extra 5% off. That's our promise.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Become a Host CTA -->
+<section class="py-16 bg-gradient-to-br from-[#003580] via-[#0057b8] to-[#003580] text-white relative overflow-hidden">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-10">
+        <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;60&quot; height=&quot;60&quot; viewBox=&quot;0 0 60 60&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%23ffffff&quot; fill-opacity=&quot;1&quot;%3E%3Cpath d=&quot;M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+    </div>
+
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+                <p class="text-[#feba02] font-bold uppercase tracking-wide text-sm mb-4">Partner with us</p>
+                <h2 class="font-display text-4xl md:text-5xl font-bold mb-6">
+                    List Your Property Today
+                </h2>
+                <p class="text-lg text-white/90 mb-8 leading-relaxed">
+                    Join Africa's premier travel marketplace and reach thousands of verified travelers. 
+                    Our platform provides all the tools you need to manage bookings, showcase your property, 
+                    and grow your business.
+                </p>
+                <div class="space-y-4 mb-8">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-check-circle text-[#feba02] text-xl"></i>
+                        <span class="text-white/90">Free to list, pay only when you get bookings</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-check-circle text-[#feba02] text-xl"></i>
+                        <span class="text-white/90">Powerful dashboard with analytics & insights</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-check-circle text-[#feba02] text-xl"></i>
+                        <span class="text-white/90">Dedicated partner support team</span>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-4">
+                    {% if user.is_authenticated and user.is_staff or user.is_authenticated and user.is_superuser or user.is_authenticated and user.role == 'host' %}
+                    <a href="{% url 'properties:create' %}" class="btn btn-accent btn-lg">
+                        <i class="fa-solid fa-plus-circle"></i> List your property
+                    </a>
+                    {% elif user.is_authenticated %}
+                    <a href="{% url 'accounts:enable_business' %}" class="btn btn-secondary btn-lg">
+                        <i class="fa-solid fa-user-plus"></i> Become a host
+                    </a>
+                    {% else %}
+                    <a href="{% url 'accounts:register' %}?next={% url 'properties:create' %}" class="btn btn-secondary btn-lg">
+                        <i class="fa-solid fa-user"></i> Create an account to host
+                    </a>
+                    {% endif %}
+                    {% if 'business' in installed_apps %}
+                    <a href="{% url 'business:dashboard' %}" class="btn btn-secondary btn-lg">
+                        <i class="fa-solid fa-chart-line"></i> Learn more
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="hidden md:block">
+                <div class="card overflow-hidden shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-500">
+                    <div class="h-80 bg-gradient-to-br from-amber-400 via-orange-500 to-red-600 flex items-center justify-center">
+                        <div class="text-center text-white">
+                            <i class="fa-solid fa-hotel text-8xl mb-4 opacity-50"></i>
+                            <p class="text-2xl font-bold">Your Property Here</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h4 class="font-bold text-gray-900 mb-1">Your Amazing Lodge</h4>
+                                <p class="text-sm text-gray-600">Paradise Location</p>
+                            </div>
+                            <div class="text-right">
+                                <div class="badge badge-warning">
+                                    <i class="fa-solid fa-star"></i> Featured
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-2xl font-display font-bold text-[#003580]">$XXX</p>
+                                <p class="text-xs text-gray-500">per night</p>
+                            </div>
+                            <div class="badge badge-success">
+                                Available
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Trust & Inspiration Section -->
+<section class="py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid md:grid-cols-2 gap-8">
+            <!-- How We Work -->
+            <div class="card card-body">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-12 h-12 rounded-lg bg-[#003580] flex items-center justify-center text-white text-xl">
+                        <i class="fa-solid fa-lightbulb"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900">How We Work</h3>
+                </div>
+                <ol class="space-y-4">
+                    <li class="flex gap-3">
+                        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-[#003580] text-white flex items-center justify-center font-bold text-sm">1</span>
+                        <div>
+                            <p class="font-semibold text-gray-900">Search & Compare</p>
+                            <p class="text-sm text-gray-600">Browse verified properties with detailed information and real guest reviews</p>
+                        </div>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-[#003580] text-white flex items-center justify-center font-bold text-sm">2</span>
+                        <div>
+                            <p class="font-semibold text-gray-900">Book Securely</p>
+                            <p class="text-sm text-gray-600">Make secure payments with instant confirmation and flexible cancellation</p>
+                        </div>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-[#003580] text-white flex items-center justify-center font-bold text-sm">3</span>
+                        <div>
+                            <p class="font-semibold text-gray-900">Experience Africa</p>
+                            <p class="text-sm text-gray-600">Enjoy your adventure and share your experience with fellow travelers</p>
+                        </div>
+                    </li>
+                </ol>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="card card-body">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-12 h-12 rounded-lg bg-[#feba02] flex items-center justify-center text-[#003580] text-xl">
+                        <i class="fa-solid fa-compass"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900">Explore More</h3>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'bookings:list' %}" class="btn btn-ghost justify-start">
+                        <i class="fa-solid fa-calendar-check text-[#003580]"></i> My Bookings
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'reviews:review_list' %}" class="btn btn-ghost justify-start">
+                        <i class="fa-solid fa-star text-[#003580]"></i> Reviews
+                    </a>
+                    <a href="{% url 'blog:post_list' %}" class="btn btn-ghost justify-start">
+                        <i class="fa-solid fa-blog text-[#003580]"></i> Travel Blog
+                    </a>
+                    <a href="{% url 'newsletter:subscribe' %}" class="btn btn-ghost justify-start">
+                        <i class="fa-solid fa-envelope text-[#003580]"></i> Newsletter
+                    </a>
+                    <a href="{% url 'tours:tour_list' %}" class="btn btn-ghost justify-start">
+                        <i class="fa-solid fa-mountain-sun text-[#003580]"></i> Safari Tours
+                    </a>
+                    <a href="{% url 'flights:flight_list' %}" class="btn btn-ghost justify-start">
+                        <i class="fa-solid fa-plane text-[#003580]"></i> Book Flights
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Newsletter Signup -->
+<section class="py-16 bg-gradient-to-b from-white to-gray-50">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="card overflow-hidden">
+            <div class="bg-gradient-to-r from-[#003580] to-[#0057b8] p-8 md:p-12 text-white text-center">
+                <i class="fa-solid fa-envelope-open-text text-5xl mb-4 text-[#feba02]"></i>
+                <h2 class="font-display text-3xl md:text-4xl font-bold mb-4">
+                    Never Miss an Adventure
+                </h2>
+                <p class="text-lg text-white/90 mb-8">
+                    Subscribe to our newsletter for exclusive deals, travel tips, and safari inspiration
+                </p>
+                <form method="post" action="{% url 'newsletter:subscribe' %}" class="max-w-md mx-auto flex gap-3">
+                    {% csrf_token %}
+                    <input type="email" 
+                           name="email" 
+                           placeholder="Your email address" 
+                           class="form-input flex-1 text-gray-900" 
+                           required>
+                    <button type="submit" class="btn btn-accent whitespace-nowrap">
+                        <i class="fa-solid fa-paper-plane"></i> Subscribe
+                    </button>
+                </form>
+                <p class="text-xs text-white/70 mt-4">
+                    We respect your privacy. Unsubscribe at any time.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Initialize line clamping for property descriptions
+    document.addEventListener('DOMContentLoaded', function() {
+        const clampedElements = document.querySelectorAll('.line-clamp-2');
+        clampedElements.forEach(el => {
+            el.style.display = '-webkit-box';
+            el.style.webkitLineClamp = '2';
+            el.style.webkitBoxOrient = 'vertical';
+            el.style.overflow = 'hidden';
+        });
+    });
+</script>
+{% endblock %}

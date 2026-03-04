@@ -1,0 +1,16 @@
+Hello {{ user.first_name|default:user.email }},
+
+Welcome to Marvel Safari! To complete your registration, please verify your email address using the code below:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            {{ code }}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This code will expire in {{ expiry_minutes }} minutes.
+
+If you didn't create an account with Marvel Safari, please ignore this email.
+
+Need help? Contact our support team at {{ support_email }}
+
+Safe travels,
+The Marvel Safari Team

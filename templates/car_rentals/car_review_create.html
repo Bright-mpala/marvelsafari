@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Rate {{ car.make }} {{ car.model }} - Marvel Safari{% endblock %}
+
+{% block content %}
+<section class="max-w-2xl mx-auto px-4 py-10 animate-fade-in">
+
+ <div class="text-center mb-8">
+  <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-full mb-4">
+   <i class="fas fa-car text-3xl text-emerald-600"></i>
+  </div>
+  <h1 class="text-2xl font-bold text-gray-900">Share your experience</h1>
+  <p class="text-gray-500">Help other travelers understand how this car performs on real trips.</p>
+ </div>
+
+ <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
+  <div class="flex items-center gap-4">
+   {% if car.primary_image_url %}
+   <img src="{{ car.primary_image_url }}" alt="{{ car.make }} {{ car.model }}" class="w-20 h-16 object-cover rounded-xl">
+   {% else %}
+   <div class="w-20 h-16 bg-gray-100 rounded-xl flex items-center justify-center"><i class="fas fa-car text-xl text-gray-300"></i></div>
+   {% endif %}
+   <div>
+    <h3 class="font-bold text-gray-900">{{ car.make }} {{ car.model }}</h3>
+    <p class="text-sm text-gray-500">Ref: {{ booking.booking_reference }} • {{ booking.pickup_date|date:'d M' }} → {{ booking.dropoff_date|date:'d M' }}</p>
+    <p class="text-xs text-gray-400">Pickup {{ booking.pickup_location.name|default:'TBD' }} • Dropoff {{ booking.dropoff_location.name|default:'TBD' }}</p>
+   </div>
+  </div>
+ </div>
+
+ <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+  <div class="bg-[#003580] px-6 py-3">
+   <h2 class="text-white font-semibold"><i class="fas fa-pen mr-2"></i>Rate the vehicle</h2>
+  </div>
+
+  <form method="post" class="p-6 space-y-5">
+   {% csrf_token %}
+
+   <div>
+    <label class="block text-sm font-medium text-gray-700 mb-2">Overall rating <span class="text-red-500">*</span></label>
+    <div x-data="{ rating: {{ form.rating.value|default:0 }} }" class="flex items-center gap-1">
+     {% for i in "12345" %}
+     <button type="button" @click="rating={{ forloop.counter }}"
+       :class="rating >= {{ forloop.counter }} ? 'text-emerald-500' : 'text-gray-300'"
+       class="text-3xl hover:text-emerald-500 transition-colors focus:outline-none">
+      <i class="fas fa-star"></i>
+     </button>
+     {% endfor %}
+     <input type="hidden" name="rating" x-bind:value="rating" id="id_rating" value="{{ form.rating.value|default:0 }}">
+     <span class="ml-3 text-sm text-gray-500" x-text="rating ? rating + '/5' : 'Select a rating'"></span>
+    </div>
+    {% if form.rating.errors %}<p class="text-red-500 text-xs mt-1">{{ form.rating.errors.0 }}</p>{% endif %}
+   </div>
+
+   <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1.5">Feedback for future renters <span class="text-red-500">*</span></label>
+    {{ form.feedback }}
+    {% if form.feedback.errors %}<p class="text-red-500 text-xs mt-1">{{ form.feedback.errors.0 }}</p>{% endif %}
+    <p class="text-xs text-gray-400 mt-1">Mention comfort, fuel economy, terrain performance, and anything the next guest should know.</p>
+   </div>
+
+   {% if form.non_field_errors %}
+   <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+    {% for error in form.non_field_errors %}<p class="text-red-800 text-sm"><i class="fas fa-exclamation-triangle mr-1"></i>{{ error }}</p>{% endfor %}
+   </div>
+   {% endif %}
+
+   <div class="flex gap-3 pt-2">
+    <button type="submit" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold transition-colors">
+     <i class="fas fa-paper-plane mr-2"></i>Submit review
+    </button>
+    <a href="{% url 'car_rentals:my_bookings' %}" class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors text-center">
+     Back to bookings
+    </a>
+   </div>
+  </form>
+ </div>
+
+ <div class="mt-6 bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm text-emerald-800">
+  <p class="font-semibold mb-2"><i class="fas fa-lightbulb mr-1"></i>Review checklist</p>
+  <ul class="list-disc list-inside space-y-1 text-emerald-700">
+   <li>Was the car condition consistent with the photos?</li>
+   <li>How did it handle the terrain or city traffic?</li>
+   <li>Was the pickup/dropoff smooth and on time?</li>
+   <li>Would you rent this vehicle again?</li>
+  </ul>
+ </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+{% endblock %}

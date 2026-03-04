@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+
+{% block title %}Tours - Marvel Safari{% endblock %}
+
+{% block content %}
+<section class="max-w-7xl mx-auto px-4 py-10">
+ <div class="bg-gradient-to-r from-[#003580] to-[#0057b8] rounded-3xl p-8 md:p-10 text-white mb-10 relative overflow-hidden">
+  <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 20% 20%, #fff 0 2px, transparent 2px); background-size: 24px 24px;"></div>
+  <div class="relative">
+   <h2 class="font-display text-4xl font-bold mb-2">Discover Tours</h2>
+   <p class="text-white/80">Curated day trips, multi-day journeys, and local experiences.</p>
+   <form method="get" class="mt-6 grid md:grid-cols-4 gap-4">
+    <div>
+     <label class="form-label text-white/80">Destination</label>
+     <input type="text" name="destination" value="{{ request.GET.destination }}" placeholder="Where do you want to go?" class="form-input bg-white/95">
+    </div>
+    <div>
+     <label class="form-label text-white/80">Tour Type</label>
+     <select name="tour_type" class="form-select bg-white/95">
+      <option value="">All Types</option>
+      <option value="adventure" {% if request.GET.tour_type == 'adventure' %}selected{% endif %}>Adventure</option>
+      <option value="cultural" {% if request.GET.tour_type == 'cultural' %}selected{% endif %}>Cultural</option>
+      <option value="nature" {% if request.GET.tour_type == 'nature' %}selected{% endif %}>Nature</option>
+      <option value="food" {% if request.GET.tour_type == 'food' %}selected{% endif %}>Food & Wine</option>
+      <option value="city" {% if request.GET.tour_type == 'city' %}selected{% endif %}>City Tours</option>
+     </select>
+    </div>
+    <div>
+     <label class="form-label text-white/80">Duration</label>
+     <select name="duration" class="form-select bg-white/95">
+      <option value="">Any Duration</option>
+      <option value="half-day" {% if request.GET.duration == 'half-day' %}selected{% endif %}>Half Day</option>
+      <option value="full-day" {% if request.GET.duration == 'full-day' %}selected{% endif %}>Full Day</option>
+      <option value="multi-day" {% if request.GET.duration == 'multi-day' %}selected{% endif %}>Multi-Day</option>
+     </select>
+    </div>
+    <div>
+     <label class="form-label text-white/80">Price Range</label>
+     <select name="price_range" class="form-select bg-white/95">
+      <option value="">Any Price</option>
+      <option value="budget" {% if request.GET.price_range == 'budget' %}selected{% endif %}>Under $50</option>
+      <option value="moderate" {% if request.GET.price_range == 'moderate' %}selected{% endif %}>$50 - $150</option>
+      <option value="premium" {% if request.GET.price_range == 'premium' %}selected{% endif %}>Over $150</option>
+     </select>
+    </div>
+    <div class="md:col-span-4">
+     <button type="submit" class="btn btn-accent btn-lg w-full">Search tours</button>
+    </div>
+   </form>
+  </div>
+ </div>
+
+ {% if active_filters %}
+ <div class="bg-white rounded-lg shadow border border-gray-100 p-4 mb-6">
+  <p class="text-xs uppercase tracking-wide text-gray-500 mb-3">Active filters</p>
+  <div class="flex flex-wrap gap-2">
+   {% for filter in active_filters %}
+   <span class="px-3 py-1 rounded-full bg-blue-50 text-[#005999] text-sm font-medium">{{ filter.label }}: {{ filter.value }}</span>
+   {% endfor %}
+   <a href="{% url 'tours:tour_list' %}" class="px-3 py-1 rounded-full border border-gray-200 text-sm text-gray-600 hover:border-[#0071c2] hover:text-[#0071c2] transition">Clear all</a>
+  </div>
+ </div>
+ {% endif %}
+
+ <div class="-mx-2 px-2 pb-4 flex gap-2 overflow-x-auto snap-x">
+  <a href="?{% if query_string %}{{ query_string }}&{% endif %}tour_type=adventure" class="snap-start px-4 py-2 rounded-full border border-gray-200 text-sm text-gray-700 bg-white hover:border-[#0071c2] transition whitespace-nowrap">Iconic Safaris</a>
+  <a href="?{% if query_string %}{{ query_string }}&{% endif %}tour_type=cultural" class="snap-start px-4 py-2 rounded-full border border-gray-200 text-sm text-gray-700 bg-white hover:border-[#0071c2] transition whitespace-nowrap">Culture Walks</a>
+  <a href="?{% if query_string %}{{ query_string }}&{% endif %}duration=multi-day" class="snap-start px-4 py-2 rounded-full border border-gray-200 text-sm text-gray-700 bg-white hover:border-[#0071c2] transition whitespace-nowrap">Multi-day Trails</a>
+  <a href="?{% if query_string %}{{ query_string }}&{% endif %}price_range=budget" class="snap-start px-4 py-2 rounded-full border border-gray-200 text-sm text-gray-700 bg-white hover:border-[#0071c2] transition whitespace-nowrap">Under $50</a>
+  <a href="?{% if query_string %}{{ query_string }}&{% endif %}price_range=premium" class="snap-start px-4 py-2 rounded-full border border-gray-200 text-sm text-gray-700 bg-white hover:border-[#0071c2] transition whitespace-nowrap">Premium Private</a>
+ </div>
+
+ <div class="flex items-center justify-between mb-5">
+  <h3 class="text-lg font-semibold text-gray-900">{{ total_tours|default:0 }} curated tour option{{ total_tours|default:0|pluralize }}</h3>
+  <span class="text-sm text-gray-600">Instant booking with local operator support</span>
+ </div>
+
+ <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+  <div class="bg-white rounded-lg shadow-md p-4 text-center">
+   <div class="text-4xl mb-2">🏔️</div>
+   <h3 class="font-bold text-gray-800 mb-1">Adventure</h3>
+   <p class="text-gray-600 text-sm">Thrilling experiences</p>
+   <div class="text-lg font-semibold text-[#0071c2] mt-2">Popular</div>
+  </div>
+  <div class="bg-white rounded-lg shadow-md p-4 text-center">
+   <div class="text-4xl mb-2">🏛️</div>
+   <h3 class="font-bold text-gray-800 mb-1">Cultural</h3>
+   <p class="text-gray-600 text-sm">Historical & heritage</p>
+   <div class="text-lg font-semibold text-[#0071c2] mt-2">Educational</div>
+  </div>
+  <div class="bg-white rounded-lg shadow-md p-4 text-center">
+   <div class="text-4xl mb-2">🌿</div>
+   <h3 class="font-bold text-gray-800 mb-1">Nature</h3>
+   <p class="text-gray-600 text-sm">Wildlife & landscapes</p>
+   <div class="text-lg font-semibold text-[#0071c2] mt-2">Relaxing</div>
+  </div>
+  <div class="bg-white rounded-lg shadow-md p-4 text-center">
+   <div class="text-4xl mb-2">🍽️</div>
+   <h3 class="font-bold text-gray-800 mb-1">Food Tours</h3>
+   <p class="text-gray-600 text-sm">Culinary experiences</p>
+   <div class="text-lg font-semibold text-[#0071c2] mt-2">Delicious</div>
+  </div>
+ </div>
+
+ {% if tours %}
+ <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+  {% for tour in tours %}
+  <div class="card overflow-hidden">
+   <div class="h-48 bg-gradient-to-br from-emerald-400 to-sky-500 flex items-center justify-center text-6xl">
+    {% if tour.tour_type == 'adventure' %}🏔️{% elif tour.tour_type == 'cultural' %}🏛️{% elif tour.tour_type == 'nature' %}🌿{% elif tour.tour_type == 'food' %}🍽️{% else %}🗺️{% endif %}
+   </div>
+   <div class="card-body">
+    <div class="flex items-start justify-between gap-3">
+     <h3 class="font-semibold text-lg text-gray-800">{{ tour.name }}</h3>
+     <span class="badge badge-muted">{{ tour.tour_type|title }}</span>
+    </div>
+    <p class="text-gray-600 text-sm mt-2">{{ tour.description|truncatechars:100 }}</p>
+    <div class="flex items-center gap-2 mt-3">
+     <span class="badge badge-outline">{{ tour.duration_hours }}h{% if tour.duration_days %} + {{ tour.duration_days }}d{% endif %}</span>
+     <span class="text-xs text-gray-500">Small group friendly</span>
+    </div>
+    <div class="flex items-center justify-between mt-4">
+     <div>
+      <span class="text-2xl font-bold text-gray-800">{{ tour.currency }} {{ tour.base_price|floatformat:2 }}</span>
+      <span class="text-gray-600">/person</span>
+     </div>
+     <div class="flex gap-1">
+      {% if tour.average_rating %}
+      {% for i in "12345" %}
+      {% if forloop.counter <= tour.average_rating %}<span class="text-yellow-400">★</span>{% else %}<span class="text-gray-300">★</span>{% endif %}
+      {% endfor %}
+      {% else %}
+      <span class="text-xs text-gray-500">New</span>
+      {% endif %}
+     </div>
+    </div>
+    {% if user.is_authenticated %}
+    <a href="{% url 'tours:tour_booking_create' tour.pk %}" class="btn btn-primary btn-sm w-full mt-4">Book tour</a>
+    {% else %}
+    <a href="{% url 'accounts:login' %}?next={% url 'tours:tour_booking_create' tour.pk %}" class="btn btn-primary btn-sm w-full mt-4">Sign in to book</a>
+    {% endif %}
+   </div>
+  </div>
+  {% endfor %}
+ </div>
+ {% else %}
+ <div class="text-center py-12">
+  <div class="text-6xl mb-4">🗺️</div>
+  <h3 class="text-xl font-bold text-gray-800 mb-2">Discover amazing tours</h3>
+  <p class="text-gray-600">Search above to find tours that match your interests</p>
+ </div>
+ {% endif %}
+
+ {% if page_obj and page_obj.paginator.num_pages > 1 %}
+ <div class="mt-8 bg-white rounded-xl border border-gray-100 p-4">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm text-gray-600">
+   <span>Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+   <span>{{ page_obj.paginator.count }} curations</span>
+  </div>
+  <div class="flex flex-wrap gap-2 mt-4">
+   {% if page_obj.has_previous %}
+    <a href="?{% if query_string %}{{ query_string }}&{% endif %}page=1" class="px-4 py-2 rounded-full border border-gray-200 text-sm bg-white hover:border-[#0071c2]">First</a>
+    <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.previous_page_number }}" class="px-4 py-2 rounded-full border border-gray-200 text-sm bg-white hover:border-[#0071c2]">Prev</a>
+   {% endif %}
+   {% for num in page_obj.paginator.page_range %}
+    {% if num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+               {% if num == page_obj.number %}
+                     <span class="px-4 py-2 rounded-full bg-[#003580] text-white text-sm font-semibold">{{ num }}</span>
+               {% else %}
+                     <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ num }}" class="px-4 py-2 rounded-full border border-gray-200 text-sm bg-white hover:border-[#0071c2]">{{ num }}</a>
+               {% endif %}
+    {% endif %}
+   {% endfor %}
+   {% if page_obj.has_next %}
+    <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.next_page_number }}" class="px-4 py-2 rounded-full border border-gray-200 text-sm bg-white hover:border-[#0071c2]">Next</a>
+    <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.paginator.num_pages }}" class="px-4 py-2 rounded-full border border-gray-200 text-sm bg-white hover:border-[#0071c2]">Last</a>
+   {% endif %}
+  </div>
+ </div>
+ {% endif %}
+
+ <div class="bg-white rounded-lg shadow-md p-6 mt-8">
+  <h3 class="text-xl font-bold text-gray-800 mb-4">Why Book Tours with Marvel Safari?</h3>
+  <div class="grid md:grid-cols-3 gap-6">
+   <div class="text-center">
+    <div class="text-4xl mb-2">👥</div>
+    <h4 class="font-semibold text-gray-800 mb-2">Expert Guides</h4>
+    <p class="text-gray-600 text-sm">Local experts with deep knowledge</p>
+   </div>
+   <div class="text-center">
+    <div class="text-4xl mb-2">🛡️</div>
+    <h4 class="font-semibold text-gray-800 mb-2">Safe & Secure</h4>
+    <p class="text-gray-600 text-sm">Your safety is our top priority</p>
+   </div>
+   <div class="text-center">
+    <div class="text-4xl mb-2">⭐</div>
+    <h4 class="font-semibold text-gray-800 mb-2">Best Reviews</h4>
+    <p class="text-gray-600 text-sm">Consistently rated excellent by travelers</p>
+   </div>
+  </div>
+ </div>
+
+ <div class="bg-white rounded-lg shadow-md p-6 mt-8">
+  <h3 class="text-xl font-bold text-gray-800 mb-4">Bundle experiences</h3>
+  <div class="grid md:grid-cols-3 gap-4">
+   <a href="{% url 'properties:search' %}?q={{ request.GET.destination }}" class="rounded-lg border border-gray-100 p-4 hover:bg-gray-50 transition">
+    <p class="text-sm text-gray-500">Stay nearby</p>
+    <p class="font-semibold text-gray-900 mt-1">Find boutique stays</p>
+    <p class="text-sm text-gray-600 mt-2">Match each tour stop with a trusted stay.</p>
+   </a>
+   <a href="{% url 'flights:flight_list' %}?destination={{ request.GET.destination }}" class="rounded-lg border border-gray-100 p-4 hover:bg-gray-50 transition">
+    <p class="text-sm text-gray-500">Arrive relaxed</p>
+    <p class="font-semibold text-gray-900 mt-1">Lock flights</p>
+    <p class="text-sm text-gray-600 mt-2">Coordinate flights with tour start dates.</p>
+   </a>
+   <a href="{% url 'car_rentals:car_list' %}?pickup_location={{ request.GET.destination }}" class="rounded-lg border border-gray-100 p-4 hover:bg-gray-50 transition">
+    <p class="text-sm text-gray-500">Move on your terms</p>
+    <p class="font-semibold text-gray-900 mt-1">Book private transfers</p>
+    <p class="text-sm text-gray-600 mt-2">Secure drivers that know every trail.</p>
+   </a>
+  </div>
+ </div>
+</section>
+{% endblock %}

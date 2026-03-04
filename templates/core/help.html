@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Help Center - Marvel Safari{% endblock %}
+
+{% block meta_description %}Find answers to common questions about bookings, payments, travel requirements, and more. Get help with your Marvel Safari experience.{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-yellow-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <h1 class="text-4xl font-bold tracking-tight mb-4">
+        <span class="text-[#feba02]">Help</span>
+        <span class="text-[#003580]">Center</span>
+      </h1>
+      <p class="text-lg text-gray-600">Find answers to your questions</p>
+    </div>
+
+    <!-- Content -->
+    <div class="bg-white rounded-2xl shadow-xl p-8 lg:p-12">
+      <div class="prose prose-lg max-w-none text-gray-700">
+        <h2>Getting Started</h2>
+        <p>Welcome to Marvel Safari! Here's how to make the most of our platform.</p>
+
+        <h2>Bookings</h2>
+        <h3>How do I make a booking?</h3>
+        <p>Search for your desired accommodation, tour, or service, select your dates, and follow the booking process.</p>
+
+        <h3>Can I modify my booking?</h3>
+        <p>Booking modifications are subject to availability and the property's cancellation policy. Contact us for assistance.</p>
+
+        <h2>Payments</h2>
+        <h3>What payment methods do you accept?</h3>
+        <p>We accept major credit cards, debit cards, and mobile money payments in select regions.</p>
+
+        <h3>Is my payment secure?</h3>
+        <p>Yes, all payments are processed through secure, encrypted channels.</p>
+
+        <h2>Travel Requirements</h2>
+        <h3>What documents do I need for safari travel?</h3>
+        <p>Requirements vary by destination. Generally, you'll need a valid passport and possibly visas or permits.</p>
+
+        <h2>Customer Support</h2>
+        <p>Our support team is available 24/7. Contact us at support@marvelsafari.com or through the contact form.</p>
+
+        <h2>Still Need Help?</h2>
+        <p>If you can't find the answer you're looking for, please <a href="{% url 'core:contact' %}" class="text-[#003580] hover:text-[#feba02]">contact our support team</a>.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

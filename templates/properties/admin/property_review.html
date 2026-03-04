@@ -1,0 +1,281 @@
+{% extends 'base.html' %}
+{% load static property_filters %}
+
+{% block title %}Review Property: {{ property.name }} - Admin{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'properties:admin_pending' %}">Pending Reviews</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ property.name }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Property Details -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">{{ property.name }}</h4>
+                        <span class="badge bg-warning text-dark">Pending Review</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Images -->
+                    {% if property.images.exists %}
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">Property Images ({{ property.images.count }})</h6>
+                        <div class="row g-2">
+                            {% for image in property.images.all %}
+                            <div class="col-md-4 col-6">
+                                <img src="{{ image|property_image_url }}" 
+                                     alt="{{ image.caption|default:property.name }}"
+                                     class="img-fluid rounded"
+                                     style="height: 150px; width: 100%; object-fit: cover;">
+                                {% if image.is_primary %}
+                                <span class="badge bg-primary position-absolute" style="top: 5px; left: 15px;">Primary</span>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        No images uploaded for this property.
+                    </div>
+                    {% endif %}
+
+                    <!-- Basic Info -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">Property Type</h6>
+                        <p>{{ property.property_type.name }}
+                            {% if property.star_rating %}
+                            <span class="badge bg-warning text-dark">{{ property.star_rating }}★</span>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">Description</h6>
+                        <p>{{ property.description|linebreaks }}</p>
+                    </div>
+
+                    <!-- Location -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">Location</h6>
+                        <p>
+                            {{ property.address }}<br>
+                            {{ property.city }}{% if property.state %}, {{ property.state }}{% endif %} {{ property.postal_code }}<br>
+                            {{ property.country.name }}
+                        </p>
+                        {% if property.latitude and property.longitude %}
+                        <small class="text-muted">
+                            Coordinates: {{ property.latitude }}, {{ property.longitude }}
+                        </small>
+                        {% endif %}
+                    </div>
+
+                    <!-- Contact -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">Contact Information</h6>
+                        <ul class="list-unstyled">
+                            {% if property.email %}
+                            <li><i class="bi bi-envelope me-2"></i>{{ property.email }}</li>
+                            {% endif %}
+                            {% if property.phone %}
+                            <li><i class="bi bi-telephone me-2"></i>{{ property.phone }}</li>
+                            {% endif %}
+                            {% if property.website %}
+                            <li><i class="bi bi-globe me-2"></i>{{ property.website }}</li>
+                            {% endif %}
+                            {% if property.manager_name %}
+                            <li><i class="bi bi-person me-2"></i>Manager: {{ property.manager_name }}</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+
+                    <!-- Pricing -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">Pricing</h6>
+                        <p>
+                            {% if property.minimum_price %}
+                            <strong>${{ property.minimum_price }}</strong>
+                            {% if property.maximum_price %} - ${{ property.maximum_price }}{% endif %}
+                            / night
+                            {% else %}
+                            <span class="text-muted">Pricing not set</span>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <!-- Amenities -->
+                    {% if property.amenities.exists %}
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">Amenities</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for amenity in property.amenities.all %}
+                            <span class="badge bg-light text-dark">
+                                {% if amenity.icon %}<i class="bi bi-{{ amenity.icon }} me-1"></i>{% endif %}
+                                {{ amenity.name }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Policies -->
+                    {% if property.house_rules or property.cancellation_policy %}
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">Policies</h6>
+                        {% if property.house_rules %}
+                        <p><strong>House Rules:</strong><br>{{ property.house_rules|linebreaks }}</p>
+                        {% endif %}
+                        {% if property.cancellation_policy %}
+                        <p><strong>Cancellation Policy:</strong><br>{{ property.cancellation_policy|linebreaks }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Review Actions Sidebar -->
+        <div class="col-lg-4">
+            <!-- Owner Info -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">Owner Information</h6>
+                </div>
+                <div class="card-body">
+                    {% if property.owner %}
+                    <div class="d-flex align-items-center mb-3">
+                        {% if property.owner.profile_picture %}
+                        <img src="{{ property.owner.profile_picture.url }}" 
+                             class="rounded-circle me-3" 
+                             style="width: 50px; height: 50px; object-fit: cover;">
+                        {% else %}
+                        <div class="rounded-circle bg-secondary me-3 d-flex align-items-center justify-content-center"
+                             style="width: 50px; height: 50px;">
+                            <i class="bi bi-person text-white"></i>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <h6 class="mb-0">{{ property.owner.get_full_name|default:property.owner.email }}</h6>
+                            <small class="text-muted">{{ property.owner.email }}</small>
+                        </div>
+                    </div>
+                    <ul class="list-unstyled small">
+                        <li><strong>Role:</strong> {{ property.owner.get_role_display }}</li>
+                        <li><strong>Joined:</strong> {{ property.owner.date_joined|date:"M d, Y" }}</li>
+                        <li><strong>Email Verified:</strong> 
+                            {% if property.owner.is_email_verified %}
+                            <i class="bi bi-check-circle text-success"></i> Yes
+                            {% else %}
+                            <i class="bi bi-x-circle text-danger"></i> No
+                            {% endif %}
+                        </li>
+                    </ul>
+                    {% else %}
+                    <p class="text-muted">No owner assigned</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Submission Info -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">Submission Details</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled small">
+                        <li><strong>Submitted:</strong> {{ property.created_at|date:"M d, Y H:i" }}</li>
+                        <li><strong>Time Pending:</strong> {{ property.created_at|timesince }}</li>
+                        <li><strong>Images:</strong> {{ property.images.count }}</li>
+                        <li><strong>Amenities:</strong> {{ property.amenities.count }}</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Review Form -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">Review Decision</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Action</label>
+                            <div class="d-grid gap-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="action" id="actionApprove" value="approve" required>
+                                    <label class="form-check-label text-success fw-bold" for="actionApprove">
+                                        <i class="bi bi-check-circle me-1"></i> Approve Property
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="action" id="actionReject" value="reject">
+                                    <label class="form-check-label text-danger fw-bold" for="actionReject">
+                                        <i class="bi bi-x-circle me-1"></i> Reject Property
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3" id="rejectionReasonField" style="display: none;">
+                            <label for="rejection_reason" class="form-label">Rejection Reason <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="rejection_reason" name="rejection_reason" rows="4"
+                                      placeholder="Please explain why this property is being rejected..."></textarea>
+                            <small class="text-muted">This will be sent to the owner.</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Internal Notes (Optional)</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="2"
+                                      placeholder="Notes for internal reference..."></textarea>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send me-1"></i> Submit Decision
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rejectRadio = document.getElementById('actionReject');
+    const approveRadio = document.getElementById('actionApprove');
+    const rejectionField = document.getElementById('rejectionReasonField');
+    const rejectionTextarea = document.getElementById('rejection_reason');
+    
+    function toggleRejectionField() {
+        if (rejectRadio.checked) {
+            rejectionField.style.display = 'block';
+            rejectionTextarea.required = true;
+        } else {
+            rejectionField.style.display = 'none';
+            rejectionTextarea.required = false;
+        }
+    }
+    
+    rejectRadio.addEventListener('change', toggleRejectionField);
+    approveRadio.addEventListener('change', toggleRejectionField);
+});
+</script>
+{% endblock %}

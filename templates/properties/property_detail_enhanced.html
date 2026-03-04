@@ -1,0 +1,658 @@
+{% extends 'base.html' %}
+{% load amenity_icons property_filters %}
+
+{% block title %}{{ property.name }} - Marvel Safari{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    .gallery-lightbox {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.95);
+        z-index: 1060;
+        display: none;
+        flex-items: center;
+        justify-content: center;
+    }
+    .gallery-lightbox.active {
+        display: flex;
+    }
+    .gallery-lightbox-content {
+        position: relative;
+        max-width: 90vw;
+        max-height: 90vh;
+    }
+    .lightbox-image {
+        max-height: 85vh;
+        max-width: 85vw;
+        object-fit: contain;
+    }
+    .gallery-thumbnails {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        overflow-x: auto;
+        padding: 0 1rem;
+    }
+    .gallery-thumbnail {
+        width: 60px;
+        height: 60px;
+        border-radius: 6px;
+        overflow: hidden;
+        cursor: pointer;
+        border: 2px solid transparent;
+        opacity: 0.6;
+        transition: all 0.2s;
+    }
+    .gallery-thumbnail.active {
+        border-color: var(--color-primary);
+        opacity: 1;
+    }
+    .gallery-thumbnail:hover {
+        opacity: 1;
+    }
+    .sticky-sidebar {
+        position: sticky;
+        top: 100px;
+    }
+    #property-map {
+        height: 400px;
+        width: 100%;
+        border-radius: 12px;
+    }
+    .rating-breakdown {
+        display: grid;
+        gap: 1rem;
+    }
+    .rating-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .rating-bar-fill {
+        flex: 1;
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .rating-bar-progress {
+        height: 100%;
+        background: var(--color-primary);
+        transition: width 0.3s;
+    }
+    .review-card {
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 1.5rem;
+    }
+    .review-card:last-child {
+        border-bottom: none;
+    }
+    .amenity-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Breadcrumb -->
+        <nav class="text-sm mb-6 flex items-center gap-2">
+            <a href="/" class="text-gray-600 hover:text-[#003580] flex items-center gap-1">
+                <i class="fa-solid fa-home"></i> Home
+            </a>
+            <span class="text-gray-400">/</span>
+            <a href="{% url 'properties:list' %}" class="text-gray-600 hover:text-[#003580]">
+                Properties
+            </a>
+            <span class="text-gray-400">/</span>
+            <span class="text-gray-900 font-semibold">{{ property.name }}</span>
+        </nav>
+
+        <!-- Property Header -->
+        <div class="flex items-start justify-between mb-8 gap-6">
+            <div>
+                <h1 class="font-display text-4xl font-bold text-gray-900 mb-3">{{ property.name }}</h1>
+                <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                    <span class="flex items-center gap-2">
+                        <i class="fa-solid fa-location-dot text-[#003580]"></i>
+                        {{ property.city }}, {{ property.country }}
+                    </span>
+                    <span class="flex items-center gap-2 badge badge-warning">
+                        <i class="fa-solid fa-star"></i> {{ property.average_rating|default:"New" }}
+                    </span>
+                    <span class="flex items-center gap-2">
+                        <i class="fa-solid fa-comment"></i>
+                        {{ property.reviews.count }} reviews
+                    </span>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="shareListing(event)" class="btn btn-ghost btn-sm">
+                    <i class="fa-solid fa-share-nodes"></i> Share
+                </button>
+                <button onclick="toggleWishlist(event, {{ property.id }})" 
+                        id="wishlist-btn"
+                        class="btn btn-ghost btn-sm">
+                    <i class="fa-regular fa-heart"></i> Save
+                </button>
+            </div>
+        </div>
+
+        <!-- Photo Gallery -->
+        <div class="grid grid-cols-4 gap-2 mb-8 rounded-xl overflow-hidden h-[500px] relative">
+            {% with images=property.images.all %}
+            {% if images %}
+                {% with first_image=images.0 %}
+                <div class="col-span-2 row-span-2">
+                    <img src="{{ first_image|property_image_url }}" 
+                         alt="{{ property.name }}" 
+                         class="w-full h-full object-cover cursor-pointer hover:opacity-90 transition"
+                         onclick="openGallery(0)">
+                </div>
+                {% endwith %}
+                
+                {% for image in images|slice:"1:5" %}
+                <div>
+                    <img src="{{ image|property_image_url }}" 
+                         alt="{{ property.name }}" 
+                         class="w-full h-full object-cover cursor-pointer hover:opacity-90 transition"
+                         onclick="openGallery({{ forloop.counter }})">
+                </div>
+                {% endfor %}
+            {% endif %}
+            {% endwith %}
+            
+            <button onclick="openGallery(0)" 
+                    class="absolute bottom-4 right-4 btn btn-ghost bg-white hover:bg-gray-100 shadow-lg">
+                <i class="fa-solid fa-grid"></i> View all {{ property.images.count }} photos
+            </button>
+        </div>
+
+        <!-- Main Content & Sticky Sidebar -->
+        <div class="grid lg:grid-cols-3 gap-8" x-data="{ tab: 'overview' }">
+            
+            <!-- Main Content -->
+            <div class="lg:col-span-2 space-y-8">
+                
+                <!-- Tab Navigation -->
+                <div class="flex gap-2 border-b border-gray-200 overflow-x-auto sticky top-20 bg-white z-40">
+                    <button @click="tab = 'overview'" 
+                            :class="{'border-[#003580] text-[#003580] bg-blue-50': tab === 'overview'}"
+                            class="px-6 py-3 border-b-2 border-transparent font-semibold text-gray-600 hover:text-[#003580] whitespace-nowrap transition">
+                        <i class="fa-solid fa-info-circle"></i> Overview
+                    </button>
+                    <button @click="tab = 'amenities'" 
+                            :class="{'border-[#003580] text-[#003580] bg-blue-50': tab === 'amenities'}"
+                            class="px-6 py-3 border-b-2 border-transparent font-semibold text-gray-600 hover:text-[#003580] whitespace-nowrap transition">
+                        <i class="fa-solid fa-sparkles"></i> Amenities
+                    </button>
+                    <button @click="tab = 'location'" 
+                            :class="{'border-[#003580] text-[#003580] bg-blue-50': tab === 'location'}"
+                            class="px-6 py-3 border-b-2 border-transparent font-semibold text-gray-600 hover:text-[#003580] whitespace-nowrap transition">
+                        <i class="fa-solid fa-map"></i> Location
+                    </button>
+                    <button @click="tab = 'reviews'" 
+                            :class="{'border-[#003580] text-[#003580] bg-blue-50': tab === 'reviews'}"
+                            class="px-6 py-3 border-b-2 border-transparent font-semibold text-gray-600 hover:text-[#003580] whitespace-nowrap transition">
+                        <i class="fa-solid fa-star"></i> Reviews
+                    </button>
+                </div>
+
+                <!-- Overview Tab -->
+                <div x-show="tab === 'overview'" class="space-y-8">
+                    
+                    <!-- Description -->
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">About this property</h2>
+                        <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">{{ property.description }}</p>
+                    </div>
+
+                    <!-- Host Info Card -->
+                    <div class="card card-body">
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-4">
+                                {% if property.host.profile_picture %}
+                                <img src="{{ property.host.profile_picture.url }}" 
+                                     alt="{{ property.host.get_full_name }}"
+                                     class="w-16 h-16 rounded-full object-cover">
+                                {% else %}
+                                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-[#003580] to-[#0057b8] flex items-center justify-center text-white text-2xl font-bold">
+                                    {{ property.host.get_full_name|first|upper }}
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <p class="font-semibold text-gray-900">Hosted by {{ property.host.get_full_name|default:property.host.email }}</p>
+                                    <p class="text-sm text-gray-600">
+                                        <i class="fa-solid fa-calendar"></i>
+                                        Member since {{ property.host.date_joined|date:"Y" }}
+                                    </p>
+                                    {% if property.host.is_email_verified %}
+                                    <span class="badge badge-success text-xs mt-2">
+                                        <i class="fa-solid fa-envelope-circle-check"></i> Verified
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <button class="btn btn-primary btn-sm">
+                                <i class="fa-solid fa-envelope"></i> Message Host
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Key Highlights -->
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-4">What makes this property special</h3>
+                        <div class="grid sm:grid-cols-2 gap-4">
+                            <div class="flex items-start gap-3">
+                                <i class="fa-solid fa-check-circle text-green-600 text-xl flex-shrink-0 mt-1"></i>
+                                <div>
+                                    <p class="font-semibold text-gray-900">Exceptional cleanliness</p>
+                                    <p class="text-sm text-gray-600">Highly rated by guests</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <i class="fa-solid fa-check-circle text-green-600 text-xl flex-shrink-0 mt-1"></i>
+                                <div>
+                                    <p class="font-semibold text-gray-900">Great communication</p>
+                                    <p class="text-sm text-gray-600">Host responds within hours</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <i class="fa-solid fa-check-circle text-green-600 text-xl flex-shrink-0 mt-1"></i>
+                                <div>
+                                    <p class="font-semibold text-gray-900">Accurate location</p>
+                                    <p class="text-sm text-gray-600">{{ property.city }}, {{ property.country }}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <i class="fa-solid fa-check-circle text-green-600 text-xl flex-shrink-0 mt-1"></i>
+                                <div>
+                                    <p class="font-semibold text-gray-900">Free cancellation</p>
+                                    <p class="text-sm text-gray-600">48-hour grace period</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Amenities Tab -->
+                <div x-show="tab === 'amenities'" style="display: none;" class="space-y-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Property Amenities</h2>
+                    <div class="amenity-grid">
+                        {% for amenity in property.amenities.all %}
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid {{ amenity|amenity_icon }} text-[#003580] text-xl"></i>
+                            <span class="text-gray-900">{{ amenity.name }}</span>
+                        </div>
+                        {% empty %}
+                        <p class="text-gray-600">No amenities listed for this property.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Location Tab -->
+                <div x-show="tab === 'location'" style="display: none;" class="space-y-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">Location</h2>
+                        <div id="property-map"></div>
+                    </div>
+                    <div class="card card-body">
+                        <p class="text-lg text-gray-900 mb-2 font-semibold">
+                            <i class="fa-solid fa-location-dot text-[#003580]"></i>
+                            {{ property.address }}
+                        </p>
+                        <p class="text-gray-600 mb-4">{{ property.city }}, {{ property.country }}</p>
+                        <p class="text-sm text-gray-500">Explore the area around {{ property.city }} for local attractions.</p>
+                    </div>
+                </div>
+
+                <!-- Reviews Tab -->
+                <div x-show="tab === 'reviews'" style="display: none;" class="space-y-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-6">Guest Reviews</h2>
+                        
+                        <!-- Rating Breakdown -->
+                        <div class="grid sm:grid-cols-3 gap-8 mb-8 p-6 bg-gray-50 rounded-lg">
+                            <div class="text-center">
+                                <p class="font-display text-5xl font-bold text-[#003580] mb-1">{{ property.average_rating|default:"–" }}</p>
+                                <div class="flex justify-center gap-1 mb-2">
+                                    {% for i in "12345" %}
+                                    <i class="fa-solid fa-star text-[#feba02]"></i>
+                                    {% endfor %}
+                                </div>
+                                <p class="text-sm text-gray-600">Based on {{ property.reviews.count }} reviews</p>
+                            </div>
+                            <div class="col-span-2 rating-breakdown">
+                                <p class="text-sm text-gray-600">Rating breakdown coming soon.</p>
+                            </div>
+                        </div>
+
+                        <!-- Individual Reviews -->
+                        <div class="space-y-6">
+                            {% for review in property.reviews.all %}
+                            <div class="review-card">
+                                <div class="flex items-start gap-4 mb-3">
+                                    {% if review.user.profile_picture %}
+                                    <img src="{{ review.user.profile_picture.url }}" 
+                                         alt="{{ review.user.get_full_name }}"
+                                         class="w-12 h-12 rounded-full object-cover">
+                                    {% else %}
+                                    <div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center text-white font-bold">
+                                        {{ review.user.get_full_name|first|upper }}
+                                    </div>
+                                    {% endif %}
+                                    <div class="flex-1">
+                                        <p class="font-semibold text-gray-900">{{ review.user.get_full_name|default:review.user.email }}</p>
+                                        <div class="flex items-center gap-2 text-sm text-gray-600">
+                                            <span>{{ review.created_at|date:"M d, Y" }}</span>
+                                            <span class="badge badge-success text-xs">
+                                                <i class="fa-solid fa-star text-xs"></i> {{ review.overall_rating }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="text-gray-700 mb-3">{{ review.comment }}</p>
+                                <button class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
+                                    <i class="fa-solid fa-thumbs-up"></i> Helpful
+                                </button>
+                            </div>
+                            {% empty %}
+                            <p class="text-center text-gray-600 py-8">
+                                <i class="fa-solid fa-star text-4xl text-gray-300 mb-3"></i>
+                                <p>No reviews yet. Be the first to share your experience!</p>
+                            </p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sticky Booking Sidebar -->
+            <div class="lg:col-span-1">
+                <div class="card sticky-sidebar">
+                    <div class="card-body space-y-6">
+                        
+                        <!-- Price Display -->
+                        <div>
+                            <div class="flex items-baseline gap-2 mb-2">
+                                <span class="font-display text-4xl font-bold text-[#003580]">${{ property.minimum_price }}</span>
+                                <span class="text-gray-600"> / night</span>
+                            </div>
+                            <p class="text-sm text-gray-600">Average price per night</p>
+                        </div>
+
+                        <!-- Booking Form -->
+                        <form method="get" 
+                              action="{% url 'bookings:create' property.id %}"
+                              class="space-y-4"
+                              x-data="{ guests: 1 }">
+                            
+                            <!-- Date Range -->
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="form-label text-xs font-semibold">Check-in</label>
+                                    <input type="text" 
+                                           name="check_in" 
+                                           class="form-input text-sm" 
+                                           data-flatpickr
+                                           data-mindate="today"
+                                           placeholder="Add date"
+                                           required>
+                                </div>
+                                <div>
+                                    <label class="form-label text-xs font-semibold">Check-out</label>
+                                    <input type="text" 
+                                           name="check_out" 
+                                           class="form-input text-sm" 
+                                           data-flatpickr
+                                           data-mindate="today"
+                                           placeholder="Add date"
+                                           required>
+                                </div>
+                            </div>
+
+                            <!-- Guests Dropdown -->
+                            <div x-data="{ open: false }">
+                                <label class="form-label text-xs font-semibold">Guests</label>
+                                <button type="button" 
+                                        @click="open = !open" 
+                                        @click.away="open = false"
+                                        class="form-input text-sm w-full text-left flex items-center justify-between">
+                                    <span x-text="`${guests} guest${guests > 1 ? 's' : ''}`"></span>
+                                    <i class="fa-solid fa-chevron-down text-xs"></i>
+                                </button>
+                                <div x-show="open" 
+                                     class="card mt-2 p-4 space-y-4 absolute w-64 z-10 shadow-xl"
+                                     style="display: none;">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-semibold text-gray-900">Number of guests</span>
+                                        <div class="flex items-center gap-2">
+                                            <button type="button" 
+                                                    @click="guests = Math.max(1, guests - 1)" 
+                                                    class="btn btn-ghost btn-xs">−</button>
+                                            <span x-text="guests" class="font-semibold w-8 text-center"></span>
+                                            <button type="button" 
+                                                    @click="guests = Math.min(10, guests + 1)" 
+                                                    class="btn btn-ghost btn-xs">+</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="guests" x-model="guests">
+                            </div>
+
+                            <!-- Reserve Button -->
+                            <button type="submit" class="btn btn-primary btn-lg w-full">
+                                <i class="fa-solid fa-calendar-check"></i> Reserve
+                            </button>
+
+                            <p class="text-xs text-center text-gray-600">
+                                <i class="fa-solid fa-info-circle"></i>
+                                You won't be charged yet
+                            </p>
+
+                            <!-- Price Breakdown -->
+                            <div class="space-y-2 text-sm pt-4 border-t border-gray-200">
+                                <div class="flex justify-between text-gray-600">
+                                    <span>${{ property.minimum_price }} × <span id="night-count">0</span> nights</span>
+                                    <span id="subtotal" class="font-semibold">$0</span>
+                                </div>
+                                <div class="flex justify-between text-gray-600">
+                                    <span>Service fee (5%)</span>
+                                    <span id="service-fee" class="font-semibold">$0</span>
+                                </div>
+                                <div class="flex justify-between text-gray-600">
+                                    <span>Taxes</span>
+                                    <span id="tax" class="font-semibold">$0</span>
+                                </div>
+                                <div class="flex justify-between pt-2 border-t font-bold text-base">
+                                    <span>Total</span>
+                                    <span id="total" class="text-[#003580]">$0</span>
+                                </div>
+                            </div>
+                        </form>
+
+                        <!-- Trust Indicators -->
+                        <div class="space-y-3 pt-4 border-t border-gray-200">
+                            <div class="flex items-center gap-3 text-sm text-gray-700">
+                                <i class="fa-solid fa-ban-smoking text-green-600 text-lg"></i>
+                                <span>Free cancellation for 48 hours</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-sm text-gray-700">
+                                <i class="fa-solid fa-bolt text-[#feba02] text-lg"></i>
+                                <span>Instant confirmation</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-sm text-gray-700">
+                                <i class="fa-solid fa-shield-halved text-blue-600 text-lg"></i>
+                                <span>Secure payment</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- Gallery Lightbox -->
+<div id="gallery-lightbox" class="gallery-lightbox">
+    <div class="gallery-lightbox-content">
+        <button onclick="closeGallery()" class="absolute -top-12 right-0 text-white text-3xl hover:text-gray-300 z-10">
+            <i class="fa-solid fa-times"></i>
+        </button>
+        <button onclick="prevImage()" class="absolute left-0 top-1/2 -translate-y-1/2 text-white text-3xl hover:text-gray-300 bg-black bg-opacity-30 hover:bg-opacity-50 w-12 h-12 flex items-center justify-center rounded-r-lg">
+            <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <img id="lightbox-image" src="" alt="" class="lightbox-image">
+        <button onclick="nextImage()" class="absolute right-0 top-1/2 -translate-y-1/2 text-white text-3xl hover:text-gray-300 bg-black bg-opacity-30 hover:bg-opacity-50 w-12 h-12 flex items-center justify-center rounded-l-lg">
+            <i class="fa-solid fa-chevron-right"></i>
+        </button>
+        <div class="gallery-thumbnails">
+            {% with images=property.images.all %}
+            {% for image in images %}
+              <img src="{{ image|property_image_url }}" 
+                 alt="{{ property.name }}"
+                 class="gallery-thumbnail {% if forloop.first %}active{% endif %}"
+                 onclick="currentImageIndex = {{ forloop.counter0 }}; updateGallery()">
+            {% endfor %}
+            {% endwith %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    let currentImageIndex = 0;
+    const imageUrls = [
+        {% with images=property.images.all %}
+        {% for image in images %}'{{ image|property_image_url }}'{% if not forloop.last %}, {% endif %}{% endfor %}
+        {% endwith %}
+    ];
+
+    function openGallery(index) {
+        currentImageIndex = index;
+        updateGallery();
+        document.getElementById('gallery-lightbox').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeGallery() {
+        document.getElementById('gallery-lightbox').classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+
+    function updateGallery() {
+        if (imageUrls.length > 0) {
+            document.getElementById('lightbox-image').src = imageUrls[currentImageIndex];
+            document.querySelectorAll('.gallery-thumbnail').forEach((thumb, i) => {
+                thumb.classList.toggle('active', i === currentImageIndex);
+            });
+        }
+    }
+
+    function nextImage() {
+        currentImageIndex = (currentImageIndex + 1) % imageUrls.length;
+        updateGallery();
+    }
+
+    function prevImage() {
+        currentImageIndex = (currentImageIndex - 1 + imageUrls.length) % imageUrls.length;
+        updateGallery();
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (document.getElementById('gallery-lightbox').classList.contains('active')) {
+            if (e.key === 'Escape') closeGallery();
+            if (e.key === 'ArrowRight') nextImage();
+            if (e.key === 'ArrowLeft') prevImage();
+        }
+    });
+
+    // Initialize map only when Location tab is opened
+    function initializeMap() {
+        if (!window.mapInitialized) {
+            const map = L.map('property-map').setView([{{ property.latitude|default:"-1.286389" }}, {{ property.longitude|default:"36.817223" }}], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            L.marker([{{ property.latitude|default:"-1.286389" }}, {{ property.longitude|default:"36.817223" }}])
+                .bindPopup('<strong>{{ property.name }}</strong><br>{{ property.address }}')
+                .addTo(map);
+            window.mapInitialized = true;
+        }
+    }
+
+    // Calculate booking price
+    function updatePriceBreakdown() {
+        const checkInInput = document.querySelector('input[name="check_in"]');
+        const checkOutInput = document.querySelector('input[name="check_out"]');
+        
+        if (checkInInput._flatpickr && checkOutInput._flatpickr) {
+            const checkIn = new Date(checkInInput._flatpickr.selectedDates[0]);
+            const checkOut = new Date(checkOutInput._flatpickr.selectedDates[0]);
+            
+            if (checkIn && checkOut && checkOut > checkIn) {
+                const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+                const basePrice = {{ property.minimum_price }};
+                const subtotal = nights * basePrice;
+                const serviceFee = subtotal * 0.05;
+                const tax = (subtotal + serviceFee) * 0.1;
+                const total = subtotal + serviceFee + tax;
+                
+                document.getElementById('night-count').textContent = nights;
+                document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
+                document.getElementById('service-fee').textContent = '$' + serviceFee.toFixed(2);
+                document.getElementById('tax').textContent = '$' + tax.toFixed(2);
+                document.getElementById('total').textContent = '$' + total.toFixed(2);
+            }
+        }
+    }
+
+    // Update price when date inputs change
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('input[data-flatpickr]').forEach(input => {
+            input.addEventListener('change', updatePriceBreakdown);
+        });
+    });
+
+    function shareListing(event) {
+        event.preventDefault();
+        if (navigator.share) {
+            navigator.share({
+                title: '{{ property.name }}',
+                text: '{{ property.description|truncatewords:20 }}',
+                url: window.location.href
+            });
+        } else {
+            showToast('Share link copied to clipboard', 'success');
+            navigator.clipboard.writeText(window.location.href);
+        }
+    }
+
+    function toggleWishlist(event, propertyId) {
+        event.preventDefault();
+        const btn = event.target.closest('button');
+        btn.classList.toggle('active');
+        btn.querySelector('i').classList.toggle('fa-regular');
+        btn.querySelector('i').classList.toggle('fa-solid');
+        
+        // AJAX call to backend
+        fetch(`/api/wishlist/${propertyId}/toggle/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+        }).then(r => r.json()).then(data => {
+            showToast(data.message, 'success');
+        });
+    }
+</script>
+{% endblock %}

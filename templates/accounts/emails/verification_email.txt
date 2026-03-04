@@ -1,0 +1,1 @@
+{% include 'accounts/emails/verify_email.txt' %}

@@ -1,0 +1,897 @@
+{% extends 'base.html' %}
+
+{% block title %}List Your Property - Marvel Safari{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    .step-indicator {
+        counter-reset: step;
+    }
+    .step-indicator li {
+        counter-increment: step;
+        position: relative;
+    }
+    .step-indicator li::before {
+        content: counter(step);
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--color-gray-200);
+        color: var(--color-gray-600);
+        display: flex;
+        align-items: center;
+        justify-center;
+        font-weight: 700;
+        font-size: 14px;
+    }
+    .step-indicator li.active::before {
+        background: var(--color-primary);
+        color: white;
+    }
+    .step-indicator li.completed::before {
+        background: var(--color-success);
+        color: white;
+        content: "✓";
+    }
+    #map { height: 400px; width: 100%; border-radius: 12px; }
+    .image-preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; }
+    .image-preview-item { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; }
+    .image-preview-item img { width: 100%; height: 100%; object-fit: cover; }
+    .image-preview-item .remove-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(239, 68, 68, 0.9);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-center;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+    .image-preview-item:hover .remove-btn { opacity: 1; }
+    .drag-drop-zone {
+        border: 2px dashed var(--color-gray-300);
+        border-radius: 12px;
+        padding: 3rem;
+        text-align: center;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    .drag-drop-zone.dragover {
+        border-color: var(--color-primary);
+        background: var(--color-gray-50);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<section class="py-12 bg-gradient-to-b from-gray-50 to-white min-h-screen">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="font-display text-4xl font-bold text-gray-900 mb-3">
+                List Your Property
+            </h1>
+            <p class="text-lg text-gray-600">
+                Join Africa's premier travel marketplace and reach thousands of travelers
+            </p>
+        </div>
+
+        <!-- Step Indicator -->
+        <div class="card card-body mb-8">
+            <ul class="step-indicator flex items-center justify-between text-xs font-semibold">
+                <li class="flex-1 flex flex-col items-center gap-2 active" data-step="1">
+                    <div class="flex items-center justify-center w-9 h-9"></div>
+                    <span class="hidden sm:block text-center">Basic Info</span>
+                </li>
+                <div class="flex-1 h-0.5 bg-gray-200 mx-2"></div>
+                <li class="flex-1 flex flex-col items-center gap-2" data-step="2">
+                    <div class="flex items-center justify-center w-9 h-9"></div>
+                    <span class="hidden sm:block text-center">Location</span>
+                </li>
+                <div class="flex-1 h-0.5 bg-gray-200 mx-2"></div>
+                <li class="flex-1 flex flex-col items-center gap-2" data-step="3">
+                    <div class="flex items-center justify-center w-9 h-9"></div>
+                    <span class="hidden sm:block text-center">Amenities</span>
+                </li>
+                <div class="flex-1 h-0.5 bg-gray-200 mx-2"></div>
+                <li class="flex-1 flex flex-col items-center gap-2" data-step="4">
+                    <div class="flex items-center justify-center w-9 h-9"></div>
+                    <span class="hidden sm:block text-center">Pricing</span>
+                </li>
+                <div class="flex-1 h-0.5 bg-gray-200 mx-2"></div>
+                <li class="flex-1 flex flex-col items-center gap-2" data-step="5">
+                    <div class="flex items-center justify-center w-9 h-9"></div>
+                    <span class="hidden sm:block text-center">Photos</span>
+                </li>
+                <div class="flex-1 h-0.5 bg-gray-200 mx-2"></div>
+                <li class="flex-1 flex flex-col items-center gap-2" data-step="6">
+                    <div class="flex items-center justify-center w-9 h-9"></div>
+                    <span class="hidden sm:block text-center">Policies</span>
+                </li>
+                <div class="flex-1 h-0.5 bg-gray-200 mx-2"></div>
+                <li class="flex-1 flex flex-col items-center gap-2" data-step="7">
+                    <div class="flex items-center justify-center w-9 h-9"></div>
+                    <span class="hidden sm:block text-center">Review</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Form -->
+        <form method="post" enctype="multipart/form-data" id="property-wizard-form" class="space-y-6">
+            {% csrf_token %}
+
+            <!-- Step 1: Basic Information -->
+            <div class="wizard-step card" id="step-1" style="display: block;">
+                <div class="card-body space-y-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Basic Information</h2>
+                        <p class="text-gray-600">Tell us about your property</p>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="md:col-span-2">
+                            <label class="form-label">
+                                <i class="fa-solid fa-heading text-[#003580]"></i> Property Name *
+                            </label>
+                            <input type="text" 
+                                   name="name" 
+                                   class="form-input" 
+                                   placeholder="e.g., Serengeti Luxury Lodge"
+                                   required
+                                   maxlength="200">
+                            <p class="text-xs text-gray-500 mt-1">Choose a unique, descriptive name that highlights your property</p>
+                        </div>
+
+                        <div>
+                            <label class="form-label">
+                                <i class="fa-solid fa-building text-[#003580]"></i> Property Type *
+                            </label>
+                            <select name="property_type" class="form-select" required>
+                                <option value="">Select type</option>
+                                <option value="hotel">Hotel</option>
+                                <option value="resort">Resort</option>
+                                <option value="lodge">Lodge</option>
+                                <option value="guesthouse">Guest House</option>
+                                <option value="villa">Villa</option>
+                                <option value="apartment">Apartment</option>
+                                <option value="camp">Safari Camp</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="form-label">
+                                <i class="fa-solid fa-star text-[#003580]"></i> Star Rating (Optional)
+                            </label>
+                            <select name="star_rating" class="form-select">
+                                <option value="">Not rated</option>
+                                <option value="1">1 Star</option>
+                                <option value="2">2 Stars</option>
+                                <option value="3">3 Stars</option>
+                                <option value="4">4 Stars</option>
+                                <option value="5">5 Stars</option>
+                            </select>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="form-label">
+                                <i class="fa-solid fa-align-left text-[#003580]"></i> Description *
+                            </label>
+                            <textarea name="description" 
+                                      rows="6" 
+                                      class="form-textarea" 
+                                      placeholder="Describe your property, its unique features, and what makes it special..."
+                                      required
+                                      maxlength="2000"></textarea>
+                            <div class="flex items-center justify-between mt-1">
+                                <p class="text-xs text-gray-500">Be detailed and highlight key features</p>
+                                <span id="desc-count" class="text-xs text-gray-500">0/2000</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-6 border-t">
+                        <button type="button" onclick="nextStep()" class="btn btn-primary btn-lg">
+                            Next: Location <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Location -->
+            <div class="wizard-step card" id="step-2" style="display: none;">
+                <div class="card-body space-y-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Location</h2>
+                        <p class="text-gray-600">Where is your property located?</p>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="form-label">
+                                <i class="fa-solid fa-flag text-[#003580]"></i> Country *
+                            </label>
+                            <select name="country" class="form-select" required id="country-select">
+                                <option value="">Select country</option>
+                                <option value="KE">Kenya</option>
+                                <option value="TZ">Tanzania</option>
+                                <option value="ZA">South Africa</option>
+                                <option value="UG">Uganda</option>
+                                <option value="RW">Rwanda</option>
+                                <option value="ZW">Zimbabwe</option>
+                                <option value="BW">Botswana</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="form-label">
+                                <i class="fa-solid fa-city text-[#003580]"></i> City *
+                            </label>
+                            <input type="text" 
+                                   name="city" 
+                                   class="form-input" 
+                                   placeholder="e.g., Nairobi"
+                                   required>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="form-label">
+                                <i class="fa-solid fa-location-dot text-[#003580]"></i></i> Full Address *
+                            </label>
+                            <input type="text" 
+                                   name="address" 
+                                   class="form-input" 
+                                   placeholder="Street address, building, etc."
+                                   required>
+                        </div>
+
+                        <div>
+                            <label class="form-label">
+                                <i class="fa-solid fa-map-pin text-[#003580]"></i> Latitude
+                            </label>
+                            <input type="number" 
+                                   name="latitude" 
+                                   id="latitude" 
+                                   step="0.0001" 
+                                   class="form-input" 
+                                   placeholder="-1.286389">
+                        </div>
+
+                        <div>
+                            <label class="form-label">
+                                <i class="fa-solid fa-map-pin text-[#003580]"></i> Longitude
+                            </label>
+                            <input type="number" 
+                                   name="longitude" 
+                                   id="longitude" 
+                                   step="0.0001" 
+                                   class="form-input" 
+                                   placeholder="36.817223">
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="form-label">Click on the map to set precise location</label>
+                            <div id="map"></div>
+                            <p class="text-xs text-gray-500 mt-2">
+                                <i class="fa-solid fa-info-circle"></i> Drag the marker to adjust your property's exact position
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between gap-3 pt-6 border-t">
+                        <button type="button" onclick="prevStep()" class="btn btn-ghost btn-lg">
+                            <i class="fa-solid fa-arrow-left"></i> Back
+                        </button>
+                        <button type="button" onclick="nextStep()" class="btn btn-primary btn-lg">
+                            Next: Amenities <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Amenities -->
+            <div class="wizard-step card" id="step-3" style="display: none;">
+                <div class="card-body space-y-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Amenities & Facilities</h2>
+                        <p class="text-gray-600">What does your property offer?</p>
+                    </div>
+
+                    <div class="space-y-6">
+                        <!-- Essential Amenities -->
+                        <div>
+                            <h3 class="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-check-circle text-[#003580]"></i> Essential
+                            </h3>
+                            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-[#003580] cursor-pointer transition">
+                                    <input type="checkbox" name="amenities" value="wifi" class="form-checkbox rounded text-[#003580]">
+                                    <span class="text-sm"><i class="fa-solid fa-wifi text-gray-600"></i> WiFi</span>
+                                </label>
+                                <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-[#003580] cursor-pointer transition">
+                                    <input type="checkbox" name="amenities" value="parking" class="form-checkbox rounded text-[#003580]">
+                                    <span class="text-sm"><i class="fa-solid fa-square-parking text-gray-600"></i> Parkng</span>
+                                </label>
+                                <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-[#003580] cursor-pointer transition">
+                                    <input type="checkbox" name="amenities" value="air-conditioning" class="form-checkbox rounded text-[#003580]">
+                                    <span class="text-sm"><i class="fa-solid fa-wind text-gray-600"></i> Air Conditioning</span>
+                                </label>
+                                <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-[#003580] cursor-pointer transition">
+                                    <input type="checkbox" name="amenities" value="heating" class="form-checkbox rounded text-[#003580]">
+                                    <span class="text-sm"><i class="fa-solid fa-temperature-arrow-up text-gray-600"></i> Heating</span>
+                                </label>
+                                <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-[#003580] cursor-pointer transition">
+                                    <input type="checkbox" name="amenities" value="tv" class="form-checkbox rounded text-[#003580]">
+                                    <span class="text-sm"><i class="fa-solid fa-tv text-gray-600"></i> TV</span>
+                                </label>
+                                <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-[#003580] cursor-pointer transition">
+                                    <input type="checkbox" name="amenities" value="breakfast" class="form-checkbox rounded text-[#003580]">
+                                    <span class="text-sm"><i class="fa-solid fa-mug-saucer text-gray-600"></i> Breakfast</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Features -->
+                        <div>
+                            <h3 class="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-sparkles text-[#003580]"></i> Features
+                            </h3>
+                            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-[#003580] cursor-pointer transition">
+                                    <input type="checkbox" name="amenities" value="pool" class="form-checkbox rounded text-[#003580]">
+                                    <span class="text-sm"><i class="fa-solid fa-water-ladder text-gray-600"></i> Swimming Pool</span>
+                                </label>
+                                <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-[#003580] cursor-pointer transition">
+                                    <input type="checkbox" name="amenities" value="gym" class="form-checkbox rounded text-[#003580]">
+                                    <span class="text-sm"><i class="fa-solid fa-dumbbell text-gray-600"></i> Gym</span>
+                                </label>
+                                <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-[#003580] cursor-pointer transition">
+                                    <input type="checkbox" name="amenities" value="spa" class="form-checkbox rounded text-[#003580]">
+                                    <span class="text-sm"><i class="fa-solid fa-spa text-gray-600"></i> Spa</span>
+                                </label>
+                                <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-[#003580] cursor-pointer transition">
+                                    <input type="checkbox" name="amenities" value="restaurant" class="form-checkbox rounded text-[#003580]">
+                                    <span class="text-sm"><i class="fa-solid fa-utensils text-gray-600"></i> Restaurant</span>
+                                </label>
+                                <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-[#003580] cursor-pointer transition">
+                                    <input type="checkbox" name="amenities" value="bar" class="form-checkbox rounded text-[#003580]">
+                                    <span class="text-sm"><i class="fa-solid fa-martini-glass text-gray-600"></i> Bar</span>
+                                </label>
+                                <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-[#003580] cursor-pointer transition">
+                                    <input type="checkbox" name="amenities" value="room-service" class="form-checkbox rounded text-[#003580]">
+                                    <span class="text-sm"><i class="fa-solid fa-bell-concierge text-gray-600"></i> Room Service</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between gap-3 pt-6 border-t">
+                        <button type="button" onclick="prevStep()" class="btn btn-ghost btn-lg">
+                            <i class="fa-solid fa-arrow-left"></i> Back
+                        </button>
+                        <button type="button" onclick="nextStep()" class="btn btn-primary btn-lg">
+                            Next: Pricing <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Pricing -->
+            <div class="wizard-step card" id="step-4" style="display: none;">
+                <div class="card-body space-y-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Pricing</h2>
+                        <p class="text-gray-600">Set your pricing structure</p>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="form-label">
+                                <i class="fa-solid fa-dollar-sign text-[#003580]"></i> Base Price per Night (USD) *
+                            </label>
+                            <input type="number" 
+                                   name="base_price" 
+                                   class="form-input" 
+                                   placeholder="100"
+                                   min="1"
+                                   step="0.01"
+                                   required>
+                            <p class="text-xs text-gray-500 mt-1">Your starting price before any seasonal adjustments</p>
+                        </div>
+
+                        <div>
+                            <label class="form-label">
+                                <i class="fa-solid fa-percent text-[#003580]"></i> Currency
+                            </label>
+                            <select name="currency" class="form-select">
+                                <option value="USD">USD ($)</option>
+                                <option value="EUR">EUR (€)</option>
+                                <option value="GBP">GBP (£)</option>
+                                <option value="KES">KES (KSh)</option>
+                                <option value="TZS">TZS (TSh)</option>
+                                <option value="ZAR">ZAR (R)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="form-label">
+                                <i class="fa-solid fa-calendar-days text-[#003580]"></i> Minimum Stay (Nights)
+                            </label>
+                            <input type="number" 
+                                   name="min_stay" 
+                                   class="form-input" 
+                                   placeholder="1"
+                                   min="1"
+                                   value="1">
+                        </div>
+
+                        <div>
+                            <label class="form-label">
+                                <i class="fa-solid fa-calendar-week text-[#003580]"></i> Maximum Stay (Nights)
+                            </label>
+                            <input type="number" 
+                                   name="max_stay" 
+                                   class="form-input" 
+                                   placeholder="30"
+                                   min="1">
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="flex items-center gap-3">
+                                <input type="checkbox" name="instant_booking" class="form-checkbox rounded text-[#003580]">
+                                <div>
+                                    <p class="font-semibold text-gray-900">Enable Instant Booking</p>
+                                    <p class="text-sm text-gray-600">Guests can book immediately without waiting for approval</p>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="flex items-center gap-3">
+                                <input type="checkbox" name="free_cancellation" class="form-checkbox rounded text-[#003580]" checked>
+                                <div>
+                                    <p class="font-semibold text-gray-900">Free Cancellation (Recommended)</p>
+                                    <p class="text-sm text-gray-600">Allow guests to cancel free of charge (increases bookings by 40%)</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between gap-3 pt-6 border-t">
+                        <button type="button" onclick="prevStep()" class="btn btn-ghost btn-lg">
+                            <i class="fa-solid fa-arrow-left"></i> Back
+                        </button>
+                        <button type="button" onclick="nextStep()" class="btn btn-primary btn-lg">
+                            Next: Photos <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Photos -->
+            <div class="wizard-step card" id="step-5" style="display: none;">
+                <div class="card-body space-y-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Photos</h2>
+                        <p class="text-gray-600">Upload high-quality images of your property</p>
+                    </div>
+
+                    <div class="drag-drop-zone" id="drag-drop-zone">
+                        <i class="fa-solid fa-cloud-arrow-up text-5xl text-gray-400 mb-4"></i>
+                        <p class="text-lg font-semibold text-gray-700 mb-2">Drag & drop images here</p>
+                        <p class="text-sm text-gray-500 mb-4">or</p>
+                        <button type="button" onclick="document.getElementById('file-input').click()" class="btn btn-primary">
+                            <i class="fa-solid fa-folder-open"></i> Browse Files
+                        </button>
+                        <input type="file" 
+                               id="file-input" 
+                               name="images" 
+                               multiple 
+                               accept="image/*" 
+                               class="hidden"
+                               onchange="handleFiles(this.files)">
+                        <p class="text-xs text-gray-500 mt-4">Upload at least 5 images. Max 20 images, 5MB each. JPG, PNG, WebP</p>
+                    </div>
+
+                    <div id="image-preview-container" class="image-preview-grid" style="display: none;">
+                        <!-- Preview items will be inserted here -->
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fa-solid fa-lightbulb text-2xl"></i>
+                        <div>
+                            <p class="font-semibold mb-1">Photography Tips</p>
+                            <ul class="text-sm space-y-1 list-disc list-inside">
+                                <li>Use natural lighting and shoot during golden hour</li>
+                                <li>Include exterior, rooms, amenities, and views</li>
+                                <li>Show the property from multiple angles</li>
+                                <li>Ensure images are high-resolution (min 1200x800px)</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between gap-3 pt-6 border-t">
+                        <button type="button" onclick="prevStep()" class="btn btn-ghost btn-lg">
+                            <i class="fa-solid fa-arrow-left"></i> Back
+                        </button>
+                        <button type="button" onclick="nextStep()" class="btn btn-primary btn-lg">
+                            Next: Policies <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 6: Policies -->
+            <div class="wizard-step card" id="step-6" style="display: none;">
+                <div class="card-body space-y-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Policies & Rules</h2>
+                        <p class="text-gray-600">Set your property policies</p>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="form-label">
+                                <i class="fa-solid fa-clock text-[#003580]"></i> Check-in Time *
+                            </label>
+                            <input type="time" 
+                                   name="check_in_time" 
+                                   class="form-input" 
+                                   value="14:00"
+                                   required>
+                        </div>
+
+                        <div>
+                            <label class="form-label">
+                                <i class="fa-solid fa-clock text-[#003580]"></i> Check-out Time *
+                            </label>
+                            <input type="time" 
+                                   name="check_out_time" 
+                                   class="form-input" 
+                                   value="11:00"
+                                   required>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="form-label">
+                                <i class="fa-solid fa-ban text-[#003580]"></i> Cancellation Policy *
+                            </label>
+                            <select name="cancellation_policy" class="form-select" required>
+                                <option value="">Select policy</option>
+                                <option value="flexible">Flexible - Full refund up to 24 hours before check-in</option>
+                                <option value="moderate">Moderate - Full refund up to 5 days before check-in</option>
+                                <option value="strict">Strict - 50% refund up to 7 days before check-in</option>
+                                <option value="non-refundable">Non-refundable - Lower price, no refunds</option>
+                            </select>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="form-label">
+                                <i class="fa-solid fa-list text-[#003580]"></i> House Rules
+                            </label>
+                            <textarea name="house_rules" 
+                                      rows="5" 
+                                      class="form-textarea" 
+                                      placeholder="e.g., No smoking, No pets, No parties, Quiet hours after 10pm..."></textarea>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="form-label">
+                                <i class="fa-solid fa-info-circle text-[#003580]"></i> Special Instructions
+                            </label>
+                            <textarea name="special_instructions" 
+                                      rows="4" 
+                                      class="form-textarea" 
+                                      placeholder="Any additional information guests should know (directions, parking details, etc)..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between gap-3 pt-6 border-t">
+                        <button type="button" onclick="prevStep()" class="btn btn-ghost btn-lg">
+                            <i class="fa-solid fa-arrow-left"></i> Back
+                        </button>
+                        <button type="button" onclick="nextStep()" class="btn btn-primary btn-lg">
+                            Next: Review <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 7: Review & Submit -->
+            <div class="wizard-step card" id="step-7" style="display: none;">
+                <div class="card-body space-y-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Review & Submit</h2>
+                        <p class="text-gray-600">Review your listing before submission</p>
+                    </div>
+
+                    <div id="review-summary" class="space-y-6">
+                        <!-- Summary will be populated by JavaScript -->
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+                        <div>
+                            <p class="font-semibold mb-1">Review & Approval Process</p>
+                            <p class="text-sm">Your listing will be reviewed by our team within 24-48 hours. We'll verify all information and may contact you for additional details. Once approved, your property will be visible to thousands of travelers.</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <label class="flex items-start gap-3">
+                            <input type="checkbox" required class="form-checkbox rounded text-[#003580] mt-1">
+                            <div class="text-sm text-gray-700">
+                                <p class="font-semibold">I confirm that all information provided is accurate</p>
+                                <p class="text-gray-600">False information may result in listing rejection and account suspension</p>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3">
+                            <input type="checkbox" required class="form-checkbox rounded text-[#003580] mt-1">
+                            <div class="text-sm text-gray-700">
+                                <p class="font-semibold">I agree to the Terms of Service and Host Agreement</p>
+                                <p class="text-gray-600">
+                                    <a href="#" class="text-[#003580] hover:underline">Read terms</a>
+                                </p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="flex justify-between gap-3 pt-6 border-t">
+                        <button type="button" onclick="prevStep()" class="btn btn-ghost btn-lg">
+                            <i class="fa-solid fa-arrow-left"></i> Back
+                        </button>
+                        <button type="submit" class="btn btn-accent btn-lg">
+                            <i class="fa-solid fa-paper-plane"></i> Submit for Review
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- Save Draft Button (visible on all steps) -->
+        <div class="text-center mt-6">
+            <button type="button" onclick="saveDraft()" class="btn btn-ghost">
+                <i class="fa-solid fa-floppy-disk"></i> Save as Draft
+            </button>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    let currentStep = 1;
+    const totalSteps = 7;
+    let map, marker;
+    let uploadedFiles = [];
+
+    // Step Navigation
+    function nextStep() {
+        if (!validateStep(currentStep)) return;
+        
+        document.getElementById(`step-${currentStep}`).style.display = 'none';
+        document.querySelectorAll(`.step-indicator li[data-step="${currentStep}"]`)[0].classList.remove('active');
+        document.querySelectorAll(`.step-indicator li[data-step="${currentStep}"]`)[0].classList.add('completed');
+        
+        currentStep++;
+        document.getElementById(`step-${currentStep}`).style.display = 'block';
+        document.querySelectorAll(`.step-indicator li[data-step="${currentStep}"]`)[0].classList.add('active');
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // Initialize map on step 2
+        if (currentStep === 2 && !map) initMap();
+        
+        // Generate review summary on step 7
+        if (currentStep === 7) generateReviewSummary();
+    }
+
+    function prevStep() {
+        document.getElementById(`step-${currentStep}`).style.display = 'none';
+        document.querySelectorAll(`.step-indicator li[data-step="${currentStep}"]`)[0].classList.remove('active');
+        
+        currentStep--;
+        document.getElementById(`step-${currentStep}`).style.display = 'block';
+        document.querySelectorAll(`.step-indicator li[data-step="${currentStep}"]`)[0].classList.remove('completed');
+        document.querySelectorAll(`.step-indicator li[data-step="${currentStep}"]`)[0].classList.add('active');
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function validateStep(step) {
+        const stepEl = document.getElementById(`step-${step}`);
+        const requiredFields = stepEl.querySelectorAll('[required]');
+        let isValid = true;
+        
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                field.classList.add('border-red-500');
+                isValid = false;
+            } else {
+                field.classList.remove('border-red-500');
+            }
+        });
+        
+        if (!isValid) {
+            showToast('Please fill in all required fields', 'error');
+        }
+        
+        return isValid;
+    }
+
+    // Map Initialization
+    function initMap() {
+        map = L.map('map').setView([-1.286389, 36.817223], 10); // Default: Nairobi
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        marker = L.marker([-1.286389, 36.817223], { draggable: true }).addTo(map);
+        
+        marker.on('dragend', function(e) {
+            const position = marker.getLatLng();
+            document.getElementById('latitude').value = position.lat.toFixed(6);
+            document.getElementById('longitude').value = position.lng.toFixed(6);
+        });
+        
+        map.on('click', function(e) {
+            marker.setLatLng(e.latlng);
+            document.getElementById('latitude').value = e.latlng.lat.toFixed(6);
+            document.getElementById('longitude').value = e.latlng.lng.toFixed(6);
+        });
+    }
+
+    // File Upload Handling
+    const dropZone = document.getElementById('drag-drop-zone');
+    
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+    
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
+    
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+    });
+
+    function handleFiles(files) {
+        const container = document.getElementById('image-preview-container');
+        container.style.display = 'grid';
+        
+        Array.from(files).forEach((file, index) => {
+            if (file.type.startsWith('image/')) {
+                uploadedFiles.push(file);
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'image-preview-item';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview">
+                        <button type="button" class="remove-btn" onclick="removeImage(${uploadedFiles.length - 1})">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                        ${uploadedFiles.length === 1 ? '<span class="badge badge-warning absolute bottom-2 left-2">Primary</span>' : ''}
+                    `;
+                    container.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    function removeImage(index) {
+        uploadedFiles.splice(index, 1);
+        const container = document.getElementById('image-preview-container');
+        container.innerHTML = '';
+        uploadedFiles.forEach((file, i) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const div = document.createElement('div');
+                div.className = 'image-preview-item';
+                div.innerHTML = `
+                    <img src="${e.target.result}" alt="Preview">
+                    <button type="button" class="remove-btn" onclick="removeImage(${i})">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                    ${i === 0 ? '<span class="badge badge-warning absolute bottom-2 left-2">Primary</span>' : ''}
+                `;
+                container.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Description character count
+    document.querySelector('[name="description"]')?.addEventListener('input', function() {
+        document.getElementById('desc-count').textContent = `${this.value.length}/2000`;
+    });
+
+    // Generate Review Summary
+    function generateReviewSummary() {
+        const form = document.getElementById('property-wizard-form');
+        const formData = new FormData(form);
+        
+        const summary = `
+            <div class="card card-body">
+                <h3 class="font-bold text-gray-900 mb-4">Basic Information</h3>
+                <dl class="grid grid-cols-2 gap-4 text-sm">
+                    <div><dt class="text-gray-600">Property Name:</dt><dd class="font-semibold">${formData.get('name') || 'Not provided'}</dd></div>
+                    <div><dt class="text-gray-600">Type:</dt><dd class="font-semibold">${formData.get('property_type') || 'Not provided'}</dd></div>
+                    <div class="col-span-2"><dt class="text-gray-600">Description:</dt><dd class="text-gray-900">${formData.get('description')?.substring(0, 200) || 'Not provided'}...</dd></div>
+                </dl>
+            </div>
+            
+            <div class="card card-body">
+                <h3 class="font-bold text-gray-900 mb-4">Location</h3>
+                <dl class="grid grid-cols-2 gap-4 text-sm">
+                    <div><dt class="text-gray-600">City:</dt><dd class="font-semibold">${formData.get('city') || 'Not provided'}</dd></div>
+                    <div><dt class="text-gray-600">Country:</dt><dd class="font-semibold">${formData.get('country') || 'Not provided'}</dd></div>
+                    <div class="col-span-2"><dt class="text-gray-600">Address:</dt><dd class="font-semibold">${formData.get('address') || 'Not provided'}</dd></div>
+                </dl>
+            </div>
+            
+            <div class="card card-body">
+                <h3 class="font-bold text-gray-900 mb-4">Pricing</h3>
+                <dl class="grid grid-cols-2 gap-4 text-sm">
+                    <div><dt class="text-gray-600">Base Price:</dt><dd class="font-semibold text-2xl text-[#003580]">$${formData.get('base_price') || '0'}</dd></div>
+                    <div><dt class="text-gray-600">Min Stay:</dt><dd class="font-semibold">${formData.get('min_stay') || '1'} nights</dd></div>
+                </dl>
+            </div>
+            
+            <div class="card card-body">
+                <h3 class="font-bold text-gray-900 mb-4">Photos</h3>
+                <p class="text-sm text-gray-600">${uploadedFiles.length} images uploaded</p>
+            </div>
+        `;
+        
+        document.getElementById('review-summary').innerHTML = summary;
+    }
+
+    // Save Draft
+    function saveDraft() {
+        const form = document.getElementById('property-wizard-form');
+        const formData = new FormData(form);
+        formData.append('save_as_draft', 'true');
+        
+        // You would send this to your backend
+        showToast('Draft saved successfully', 'success');
+    }
+
+    // Form submission
+    document.getElementById('property-wizard-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!validateStep(7)) return;
+        
+        // Show loading state
+        const submitBtn = this.querySelector('[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Submitting...';
+        submitBtn.disabled = true;
+        
+        // Simulate submission (replace with actual AJAX call)
+        setTimeout(() => {
+            showToast('Property submitted for review!', 'success');
+            window.location.href = '/properties/my-listings/';
+        }, 2000);
+    });
+</script>
+{% endblock %}

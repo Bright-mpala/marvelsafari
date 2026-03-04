@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+
+{% block title %}Track Car - Marvel Safari{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  @keyframes pulse-dot { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.6);opacity:.4} }
+  .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="max-w-6xl mx-auto px-4 py-8 animate-fade-in">
+
+ <!-- Header -->
+ <div class="flex items-center justify-between mb-6">
+  <div>
+   <nav class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+    <a href="{% url 'car_rentals:my_bookings' %}" class="hover:text-[#0071c2]">My Bookings</a>
+    <i class="fas fa-chevron-right text-xs"></i>
+    <span class="text-gray-900 font-medium">Track</span>
+   </nav>
+   <h1 class="text-2xl font-bold text-gray-900">
+    <i class="fas fa-satellite-dish text-[#003580] mr-2"></i>Live Tracking
+   </h1>
+  </div>
+  <div class="flex items-center gap-3">
+   <span id="status-indicator" class="inline-flex items-center gap-1.5 text-sm">
+    <span class="w-2.5 h-2.5 rounded-full bg-green-500 pulse-dot"></span>
+    <span class="text-gray-600">Live</span>
+   </span>
+   <span id="last-updated" class="text-xs text-gray-400"></span>
+  </div>
+ </div>
+
+ <div class="grid lg:grid-cols-3 gap-6">
+
+  <!-- Map -->
+  <div class="lg:col-span-2">
+   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div id="tracking-map" class="h-[500px] w-full"></div>
+   </div>
+
+   <!-- Track History -->
+   <div class="mt-4 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+    <h3 class="font-semibold text-gray-900 mb-3"><i class="fas fa-history text-[#003580] mr-2"></i>Recent Track Points</h3>
+    <div id="track-history" class="space-y-2 max-h-40 overflow-y-auto text-sm">
+     <p class="text-gray-400">Loading track data...</p>
+    </div>
+   </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="space-y-5">
+   <!-- Car/Booking Info -->
+   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+    {% if booking.car and booking.car.primary_image_url %}
+    <img src="{{ booking.car.primary_image_url }}" alt="{{ booking.car.make }} {{ booking.car.model }}" class="w-full h-40 object-cover rounded-xl mb-4">
+    {% endif %}
+    <h3 class="font-bold text-lg text-gray-900">
+     {% if booking.car %}
+       {{ booking.car.make }} {{ booking.car.model }}
+     {% else %}
+       Vehicle
+     {% endif %}
+    </h3>
+    <p class="text-sm text-gray-500 mb-3">{% if booking.car %}{{ booking.car.year }}{% endif %}</p>
+
+    <div class="space-y-2 text-sm">
+     {% if booking.booking_reference %}
+     <div class="flex justify-between"><span class="text-gray-500">Reference</span><span class="font-mono font-medium">{{ booking.booking_reference }}</span></div>
+     {% endif %}
+     <div class="flex justify-between"><span class="text-gray-500">Status</span><span class="font-medium">{{ booking.get_status_display }}</span></div>
+     {% if booking.driver %}
+     <div class="flex justify-between"><span class="text-gray-500">Driver</span><span class="font-medium">{{ booking.driver.full_name }}</span></div>
+     {% endif %}
+    </div>
+   </div>
+
+   <!-- Live Stats -->
+   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+    <h3 class="font-semibold text-gray-900 mb-3"><i class="fas fa-tachometer-alt text-[#003580] mr-2"></i>Live Status</h3>
+    <div class="space-y-3">
+     <div class="flex items-center justify-between">
+      <span class="text-sm text-gray-500">Speed</span>
+      <span id="live-speed" class="text-lg font-bold text-[#003580]">–</span>
+     </div>
+     <div class="flex items-center justify-between">
+      <span class="text-sm text-gray-500">Heading</span>
+      <span id="live-heading" class="text-sm font-medium text-gray-700">–</span>
+     </div>
+     <div class="flex items-center justify-between">
+      <span class="text-sm text-gray-500">Last Updated</span>
+      <span id="live-time" class="text-sm text-gray-600">–</span>
+     </div>
+    </div>
+   </div>
+
+   <!-- Actions -->
+   <div class="space-y-2">
+    <a href="{% url 'car_rentals:my_bookings' %}" class="flex items-center justify-center gap-2 bg-[#003580] hover:bg-[#00264f] text-white px-4 py-3 rounded-xl font-semibold transition-colors w-full">
+     <i class="fas fa-arrow-left"></i>Back to Bookings
+    </a>
+   </div>
+
+   <!-- Legend -->
+   <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-xs text-gray-600 space-y-1">
+    <p class="font-semibold text-gray-700 mb-2">Map Legend</p>
+    <p><span class="inline-block w-3 h-3 rounded-full bg-blue-600 mr-1 align-middle"></span>Current Position</p>
+    <p><span class="inline-block w-3 h-3 rounded-full bg-gray-400 mr-1 align-middle"></span>Track History</p>
+    <p class="text-gray-400 mt-2">Updates every 10 seconds</p>
+   </div>
+  </div>
+ </div>
+</section>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var carId = "{{ car_id }}";
+  var driverId = {% if driver_id %}{{ driver_id }}{% else %}null{% endif %};
+
+  var map = L.map('tracking-map').setView([0, 0], 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+    maxZoom: 19, 
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' 
+  }).addTo(map);
+
+  var carIcon = L.divIcon({
+    className: '',
+    html: '<div style="position:relative"><div style="background:#0071c2;width:18px;height:18px;border-radius:50%;border:3px solid white;box-shadow:0 0 10px rgba(0,113,194,0.5)"></div><div class="pulse-dot" style="position:absolute;top:-4px;left:-4px;width:26px;height:26px;border-radius:50%;border:2px solid #0071c2;"></div></div>',
+    iconSize: [18, 18],
+    iconAnchor: [9, 9]
+  });
+
+  var trackIcon = L.divIcon({
+    className: '',
+    html: '<div style="background:#9ca3af;width:8px;height:8px;border-radius:50%"></div>',
+    iconSize: [8, 8],
+    iconAnchor: [4, 4]
+  });
+
+  var carMarker = null;
+  var trackMarkers = [];
+  var trackLine = null;
+  var firstLoad = true;
+
+  function headingToCompass(deg) {
+    if (deg === null || deg === undefined) return '–';
+    var dirs = ['N','NE','E','SE','S','SW','W','NW'];
+    return dirs[Math.round(deg/45)%8] + ' (' + Math.round(deg) + '°)';
+  }
+
+  function formatTime(timestamp) {
+    if (!timestamp) return '–';
+    var date = new Date(timestamp);
+    return date.toLocaleTimeString();
+  }
+
+  function updateTracking() {
+    var url = '/car-rentals/api/car-location/' + carId + '/';
+    fetch(url)
+      .then(function(r) { 
+        if (!r.ok) throw new Error('Network response was not ok');
+        return r.json(); 
+      })
+      .then(function(data) {
+        var lat = data.latitude, lng = data.longitude;
+        if (lat && lng) {
+          if (carMarker) {
+            carMarker.setLatLng([lat, lng]);
+          } else {
+            carMarker = L.marker([lat, lng], {icon: carIcon}).addTo(map);
+            carMarker.bindPopup('<strong>Current Location</strong><br>' + data.make + ' ' + data.model);
+          }
+          if (firstLoad) { 
+            map.setView([lat, lng], 15); 
+            firstLoad = false; 
+          }
+        }
+
+        document.getElementById('live-speed').textContent = data.speed_kmh ? Math.round(data.speed_kmh) + ' km/h' : '–';
+        document.getElementById('live-heading').textContent = headingToCompass(data.heading);
+        document.getElementById('live-time').textContent = data.updated_at ? formatTime(data.updated_at) : '–';
+        document.getElementById('last-updated').textContent = 'Updated: ' + new Date().toLocaleTimeString();
+
+        // Track history
+        if (data.track && data.track.length > 0) {
+          // Clear old markers
+          trackMarkers.forEach(function(m) { if (m) map.removeLayer(m); });
+          trackMarkers = [];
+          if (trackLine) map.removeLayer(trackLine);
+
+          var points = [];
+          var historyEl = document.getElementById('track-history');
+          if (historyEl) historyEl.innerHTML = '';
+
+          // Add current position first if available
+          if (lat && lng) {
+            points.push([lat, lng]);
+          }
+
+          // Add track points
+          data.track.forEach(function(pt, i) {
+            if (pt.latitude && pt.longitude) {
+              var point = [pt.latitude, pt.longitude];
+              points.push(point);
+              
+              // Add marker for track point
+              var m = L.marker(point, {icon: trackIcon}).addTo(map);
+              trackMarkers.push(m);
+
+              // Add to history list
+              if (historyEl) {
+                var div = document.createElement('div');
+                div.className = 'flex items-center justify-between text-xs text-gray-500 py-1 border-b border-gray-50';
+                div.innerHTML = '<span>' + (pt.recorded_at ? formatTime(pt.recorded_at) : '') + '</span>' +
+                               '<span>' + (pt.speed_kmh ? Math.round(pt.speed_kmh) + ' km/h' : '–') + '</span>';
+                historyEl.appendChild(div);
+              }
+            }
+          });
+
+          // Draw route line
+          if (points.length > 1) {
+            trackLine = L.polyline(points, {
+              color: '#003580', 
+              weight: 2, 
+              opacity: 0.6, 
+              dashArray: '6 4'
+            }).addTo(map);
+          }
+        }
+      })
+      .catch(function(e) { 
+        console.error('Tracking error:', e);
+        document.getElementById('status-indicator').innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-red-500"></span><span class="text-gray-600">Offline</span>';
+      });
+  }
+
+  // Initial update
+  updateTracking();
+  
+  // Update every 10 seconds
+  setInterval(updateTracking, 10000);
+});
+</script>
+{% endblock %}

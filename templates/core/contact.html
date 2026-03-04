@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Contact Us - Marvel Safari{% endblock %}
+
+{% block meta_description %}Get in touch with Marvel Safari. Contact us for bookings, support, or any questions about your African adventure.{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-yellow-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <div class="mx-auto h-16 w-16 bg-gradient-to-r from-[#003580] to-[#002d5a] rounded-full flex items-center justify-center mb-4">
+        <svg class="h-8 w-8 text-[#feba02]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+        </svg>
+      </div>
+      <h1 class="text-4xl font-bold tracking-tight mb-2">
+        <span class="text-[#feba02]">Contact</span>
+        <span class="text-[#003580]">Us</span>
+      </h1>
+      <p class="text-gray-600 text-lg">We're here to help you plan your perfect African adventure</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <!-- Contact Information -->
+      <div class="space-y-8">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900 mb-6">Get In Touch</h2>
+          <div class="space-y-6">
+            <!-- Phone -->
+            <div class="flex items-start gap-4">
+              <div class="flex-shrink-0">
+                <div class="w-12 h-12 bg-[#003580] rounded-lg flex items-center justify-center">
+                  <svg class="w-6 h-6 text-[#feba02]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                  </svg>
+                </div>
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold text-gray-900">Phone</h3>
+                <p class="text-gray-600">+254 700 000 000</p>
+                <p class="text-sm text-gray-500">Mon-Fri 9AM-6PM EAT</p>
+              </div>
+            </div>
+
+            <!-- Email -->
+            <div class="flex items-start gap-4">
+              <div class="flex-shrink-0">
+                <div class="w-12 h-12 bg-[#003580] rounded-lg flex items-center justify-center">
+                  <svg class="w-6 h-6 text-[#feba02]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                  </svg>
+                </div>
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold text-gray-900">Email</h3>
+                <p class="text-gray-600">hello@marvelsafari.com</p>
+                <p class="text-sm text-gray-500">We respond within 24 hours</p>
+              </div>
+            </div>
+
+            <!-- Location -->
+            <div class="flex items-start gap-4">
+              <div class="flex-shrink-0">
+                <div class="w-12 h-12 bg-[#003580] rounded-lg flex items-center justify-center">
+                  <svg class="w-6 h-6 text-[#feba02]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  </svg>
+                </div>
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold text-gray-900">Office</h3>
+                <p class="text-gray-600">Westlands Business Park<br>Nairobi, Kenya</p>
+                <p class="text-sm text-gray-500">Visit us for personalized consultations</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Social Media -->
+        <div>
+          <h3 class="text-xl font-bold text-gray-900 mb-4">Follow Us</h3>
+          <div class="flex gap-4">
+            <a href="#" class="w-10 h-10 bg-[#003580] rounded-lg flex items-center justify-center hover:bg-[#002d5a] transition-colors">
+              <i class="fab fa-facebook-f text-[#feba02]"></i>
+            </a>
+            <a href="#" class="w-10 h-10 bg-[#003580] rounded-lg flex items-center justify-center hover:bg-[#002d5a] transition-colors">
+              <i class="fab fa-twitter text-[#feba02]"></i>
+            </a>
+            <a href="#" class="w-10 h-10 bg-[#003580] rounded-lg flex items-center justify-center hover:bg-[#002d5a] transition-colors">
+              <i class="fab fa-instagram text-[#feba02]"></i>
+            </a>
+            <a href="#" class="w-10 h-10 bg-[#003580] rounded-lg flex items-center justify-center hover:bg-[#002d5a] transition-colors">
+              <i class="fab fa-linkedin-in text-[#feba02]"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact Form -->
+      <div class="bg-white rounded-2xl shadow-xl p-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Send us a Message</h2>
+        
+        {% if messages %}
+          {% for message in messages %}
+            <div class="mb-6 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-50 text-green-800 border border-green-200{% else %}bg-red-50 text-red-800 border border-red-200{% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+        
+        <form method="POST" class="space-y-6">
+          {% csrf_token %}
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+              <input type="text" id="first_name" name="first_name" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-[#003580] focus:border-[#003580]" required>
+            </div>
+            <div>
+              <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+              <input type="text" id="last_name" name="last_name" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-[#003580] focus:border-[#003580]" required>
+            </div>
+          </div>
+
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+            <input type="email" id="email" name="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-[#003580] focus:border-[#003580]" required>
+          </div>
+
+          <div>
+            <label for="subject" class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+            <select id="subject" name="subject" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-[#003580] focus:border-[#003580]" required>
+              <option value="">Select a subject</option>
+              <option value="booking">Booking Inquiry</option>
+              <option value="support">Customer Support</option>
+              <option value="partnership">Partnership</option>
+              <option value="feedback">Feedback</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="message" class="block text-sm font-medium text-gray-700 mb-2">Message</label>
+            <textarea id="message" name="message" rows="5" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-[#003580] focus:border-[#003580]" placeholder="Tell us how we can help you..." required></textarea>
+          </div>
+
+          <button type="submit" class="w-full bg-[#003580] text-white py-3 px-6 rounded-lg hover:bg-[#002d5a] transition-colors font-semibold">
+            Send Message
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="mt-16">
+      <h2 class="text-3xl font-bold text-center text-gray-900 mb-12">Frequently Asked Questions</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-3">How do I make a booking?</h3>
+          <p class="text-gray-600">You can book directly through our website or contact our team for personalized assistance with complex itineraries.</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-3">What payment methods do you accept?</h3>
+          <p class="text-gray-600">We accept all major credit cards, bank transfers, and mobile money payments for your convenience.</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-3">Can I modify my booking?</h3>
+          <p class="text-gray-600">Yes, bookings can be modified up to 48 hours before the start date. Contact us for assistance.</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-3">Do you offer travel insurance?</h3>
+          <p class="text-gray-600">We partner with leading insurance providers to offer comprehensive travel insurance packages.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

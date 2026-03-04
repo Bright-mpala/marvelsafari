@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% load property_filters %}
+
+{% block title %}Booking #{{ booking.id }} - Marvel Safari{% endblock %}
+
+{% block content %}
+<section class="max-w-6xl mx-auto px-4 py-10 animate-slide-up">
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+        <div>
+            <h1 class="font-display text-3xl font-bold text-gray-900">Booking confirmation</h1>
+            <p class="text-gray-600">Reference: #{{ booking.id }} - Created {{ booking.created_at|date:'M d, Y H:i' }}</p>
+        </div>
+        <span class="badge badge-{
+            {% if booking.status == 'confirmed' %}success
+            {% elif booking.status == 'pending' %}warning
+            {% elif booking.status == 'completed' %}info
+            {% elif booking.status == 'cancelled' %}error
+            {% else %}neutral{% endif %}">
+            {{ booking.get_status_display }}
+        </span>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 space-y-6">
+            <div class="card card-body">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Booking status</h2>
+                {% if booking.status == 'cancelled' %}
+                <div class="alert alert-error">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                    <div>
+                        <p class="font-semibold">This booking was cancelled</p>
+                        <p class="text-sm">If you need help, contact support or message the host.</p>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="grid sm:grid-cols-3 gap-4">
+                    <div class="flex items-center gap-3">
+                        <span class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold
+                            {% if booking.status == 'pending' %}bg-[#003580] text-white
+                            {% elif booking.status == 'confirmed' or booking.status == 'completed' %}bg-green-600 text-white
+                            {% else %}bg-gray-200 text-gray-600{% endif %}">1</span>
+                        <div>
+                            <p class="font-semibold text-gray-900">Requested</p>
+                            <p class="text-xs text-gray-500">We notified the host</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold
+                            {% if booking.status == 'confirmed' %}bg-[#003580] text-white
+                            {% elif booking.status == 'completed' %}bg-green-600 text-white
+                            {% else %}bg-gray-200 text-gray-600{% endif %}">2</span>
+                        <div>
+                            <p class="font-semibold text-gray-900">Confirmed</p>
+                            <p class="text-xs text-gray-500">Host approved your stay</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold
+                            {% if booking.status == 'completed' %}bg-[#003580] text-white
+                            {% else %}bg-gray-200 text-gray-600{% endif %}">3</span>
+                        <div>
+                            <p class="font-semibold text-gray-900">Completed</p>
+                            <p class="text-xs text-gray-500">Trip finished</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-body">
+                <div class="flex items-start gap-4">
+                    {% with prop_images=booking.property.images.all %}
+                    {% if prop_images %}
+                        {% with preview_image=prop_images.0 %}
+                        <img src="{{ preview_image|property_image_url }}" alt="{{ booking.property.name }}" class="h-24 w-24 rounded-lg object-cover">
+                        {% endwith %}
+                    {% else %}
+                    <div class="h-24 w-24 rounded-lg bg-gray-200"></div>
+                    {% endif %}
+                    {% endwith %}
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-900">{{ booking.property.name }}</h2>
+                        <p class="text-sm text-gray-600">{{ booking.property.city }}, {{ booking.property.country.name }}</p>
+                        <div class="flex flex-wrap gap-4 text-sm text-gray-600 mt-3">
+                            <span><i class="fa-solid fa-calendar"></i> {{ booking.check_in_date|date:'D, M d, Y' }} - {{ booking.check_out_date|date:'D, M d, Y' }}</span>
+                            <span><i class="fa-solid fa-users"></i> {{ booking.guests }} guest{{ booking.guests|pluralize }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {% if booking.special_requests %}
+                <div class="mt-4 bg-blue-50 rounded-lg p-3 text-sm">
+                    <p class="font-medium text-blue-800">Special requests</p>
+                    <p class="text-blue-700 mt-1">{{ booking.special_requests }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="card card-body">
+                <h2 class="text-xl font-semibold text-gray-900 mb-3">Contact host</h2>
+                <div class="flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        {% if booking.property.host.profile_picture %}
+                        <img src="{{ booking.property.host.profile_picture.url }}" alt="{{ booking.property.host.get_full_name }}" class="h-12 w-12 rounded-full object-cover">
+                        {% else %}
+                        <div class="h-12 w-12 rounded-full bg-gradient-to-br from-[#003580] to-[#0057b8] flex items-center justify-center text-white font-semibold">
+                            {{ booking.property.host.get_full_name|first|upper }}
+                        </div>
+                        {% endif %}
+                        <div>
+                            <p class="font-semibold text-gray-900">{{ booking.property.host.get_full_name|default:booking.property.host.email }}</p>
+                            <p class="text-sm text-gray-600">Usually replies within a few hours</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-envelope"></i> Message host
+                    </button>
+                </div>
+            </div>
+
+            <div class="card card-body">
+                <h2 class="text-xl font-semibold text-gray-900 mb-3">Manage booking</h2>
+                <div class="flex flex-wrap gap-3">
+                    {% if can_cancel %}
+                    <form method="post" action="{% url 'bookings:cancel' booking.pk %}">
+                        {% csrf_token %}
+                        <button class="btn btn-ghost btn-sm text-red-700 border border-red-200 hover:bg-red-50">Cancel booking</button>
+                    </form>
+                    {% endif %}
+                    <a href="{% url 'accounts:booking_history' %}" class="btn btn-ghost btn-sm">View booking history</a>
+                    {% if booking.status == 'completed' %}
+                    <a href="{% url 'reviews:review_create' booking.id %}" class="btn btn-primary btn-sm">Leave a review</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <aside class="space-y-6">
+            <div class="card card-body">
+                <h2 class="text-lg font-semibold text-gray-900 mb-3">Price summary</h2>
+                <div class="space-y-2 text-sm text-gray-700">
+                    <div class="flex justify-between">
+                        <span>${{ booking.price_per_night }} x {{ booking.nights_count }} night{{ booking.nights_count|pluralize }}</span>
+                        <span>${{ booking.total_amount }}</span>
+                    </div>
+                    <div class="border-t pt-2 flex justify-between font-semibold text-gray-900">
+                        <span>Total</span>
+                        <span>${{ booking.total_amount }}</span>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-3">Taxes and fees included where applicable.</p>
+            </div>
+
+            <div class="card card-body">
+                <h2 class="text-lg font-semibold text-gray-900 mb-3">Need help?</h2>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li>Contact support from your account dashboard</li>
+                    <li>Keep this confirmation for check-in</li>
+                    <li>Review property rules before arrival</li>
+                </ul>
+            </div>
+        </aside>
+    </div>
+</section>
+
+<section class="max-w-6xl mx-auto px-4 pb-10">
+    <div class="card card-body">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Complete your itinerary</h2>
+        <div class="grid md:grid-cols-3 gap-4">
+            <a href="{% url 'car_rentals:car_list' %}?pickup_location={{ booking.property.city }}" class="rounded-lg border border-gray-100 p-4 hover:bg-gray-50 transition">
+                <p class="text-sm text-gray-500">Airport and city transfers</p>
+                <p class="font-semibold text-gray-900 mt-1">Reserve a rental car</p>
+                <p class="text-sm text-gray-600 mt-2">Get to and from {{ booking.property.city }} comfortably.</p>
+            </a>
+            <a href="{% url 'flights:flight_list' %}?destination={{ booking.property.city }}" class="rounded-lg border border-gray-100 p-4 hover:bg-gray-50 transition">
+                <p class="text-sm text-gray-500">Travel logistics</p>
+                <p class="font-semibold text-gray-900 mt-1">Compare flights</p>
+                <p class="text-sm text-gray-600 mt-2">Find routes that match your stay dates.</p>
+            </a>
+            <a href="{% url 'tours:tour_list' %}?destination={{ booking.property.city }}" class="rounded-lg border border-gray-100 p-4 hover:bg-gray-50 transition">
+                <p class="text-sm text-gray-500">Experiences</p>
+                <p class="font-semibold text-gray-900 mt-1">Book local tours</p>
+                <p class="text-sm text-gray-600 mt-2">Make the most of your trip with guided activities.</p>
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

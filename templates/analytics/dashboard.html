@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Analytics Dashboard - Marvel Safari{% endblock %}
+
+{% block content %}
+<section class="max-w-7xl mx-auto px-4 py-8 animate-fade-in">
+ <div class="mb-6">
+  <h1 class="text-3xl font-bold text-gray-800">Analytics Dashboard</h1>
+  <p class="text-gray-600">Marketplace booking and demand performance snapshot.</p>
+ </div>
+
+ <div class="grid md:grid-cols-4 gap-4 mb-6">
+  <div class="bg-white rounded-xl border border-gray-100 p-4">
+   <p class="text-sm text-gray-500">Total Bookings</p>
+   <p class="text-2xl font-bold text-[#003580]">{{ total_bookings }}</p>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-100 p-4">
+   <p class="text-sm text-gray-500">Last 30 Days (Stays)</p>
+   <p class="text-2xl font-bold text-[#0071c2]">{{ recent_property_bookings }}</p>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-100 p-4">
+   <p class="text-sm text-gray-500">Active Properties</p>
+   <p class="text-2xl font-bold text-green-600">{{ active_properties }}</p>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-100 p-4">
+   <p class="text-sm text-gray-500">Total Revenue</p>
+   <p class="text-2xl font-bold text-gray-900">${{ total_revenue|floatformat:2 }}</p>
+  </div>
+ </div>
+
+ <div class="grid lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2 bg-white rounded-xl border border-gray-100 p-5">
+   <h2 class="text-lg font-semibold text-gray-900 mb-4">Revenue by vertical</h2>
+   <div class="space-y-3">
+	<div class="flex items-center justify-between bg-blue-50 rounded-lg px-4 py-3"><span>Stays</span><strong>${{ revenue_property|floatformat:2 }}</strong></div>
+	<div class="flex items-center justify-between bg-green-50 rounded-lg px-4 py-3"><span>Flights</span><strong>${{ revenue_flight|floatformat:2 }}</strong></div>
+	<div class="flex items-center justify-between bg-purple-50 rounded-lg px-4 py-3"><span>Car Rentals</span><strong>${{ revenue_car|floatformat:2 }}</strong></div>
+	<div class="flex items-center justify-between bg-orange-50 rounded-lg px-4 py-3"><span>Tours</span><strong>${{ revenue_tour|floatformat:2 }}</strong></div>
+   </div>
+  </div>
+
+  <div class="bg-white rounded-xl border border-gray-100 p-5">
+   <h2 class="text-lg font-semibold text-gray-900 mb-4">Top destination cities</h2>
+   <div class="space-y-2">
+	{% for city in top_cities %}
+	<div class="flex items-center justify-between text-sm bg-gray-50 rounded-lg px-3 py-2">
+	 <span class="text-gray-700">{{ city.city|default:'Unknown' }}</span>
+	 <span class="font-semibold text-gray-900">{{ city.total }}</span>
+	</div>
+	{% empty %}
+	<p class="text-sm text-gray-600">No destination data yet.</p>
+	{% endfor %}
+   </div>
+  </div>
+ </div>
+</section>
+{% endblock %}

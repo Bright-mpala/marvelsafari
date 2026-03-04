@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% load socialaccount %}
+
+{% block title %}Create Account - Marvel Safari{% endblock %}
+
+{% block content %}
+<section class="max-w-lg mx-auto px-4 py-10 animate-fade-in">
+
+  <div class="text-center mb-8">
+    <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-full mb-4">
+      <i class="fas fa-user-plus text-3xl text-emerald-600"></i>
+    </div>
+    <h1 class="text-2xl font-bold text-gray-900">Create your account</h1>
+    <p class="text-gray-500">Join thousands of travelers exploring Africa</p>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="bg-[#003580] px-6 py-3">
+      <h2 class="text-white font-semibold"><i class="fas fa-edit mr-2"></i>Your details</h2>
+    </div>
+
+    <div class="p-6">
+      {% if messages %}
+      {% for message in messages %}
+      <div class="mb-4 p-4 rounded-xl {% if message.tags == 'success' %}bg-emerald-50 text-emerald-800 border border-emerald-200{% elif message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200{% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+        <p class="text-sm flex items-center gap-2">
+          <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}"></i>
+          {{ message }}
+        </p>
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      <!-- Google Sign Up -->
+      <a href="{% provider_login_url 'google' %}" class="flex items-center justify-center gap-3 w-full px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:shadow-md transition-all mb-5">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">
+            <path fill="#4285F4" d="M -3.264 51.509 C -3.264 50.719 -3.334 49.969 -3.454 49.239 L -14.754 49.239 L -14.754 53.749 L -8.284 53.749 C -8.574 55.229 -9.424 56.479 -10.684 57.329 L -10.684 60.329 L -6.824 60.329 C -4.564 58.239 -3.264 55.159 -3.264 51.509 Z"/>
+            <path fill="#34A853" d="M -14.754 63.239 C -11.514 63.239 -8.804 62.159 -6.824 60.329 L -10.684 57.329 C -11.764 58.049 -13.134 58.489 -14.754 58.489 C -17.884 58.489 -20.534 56.379 -21.484 53.529 L -25.464 53.529 L -25.464 56.619 C -23.494 60.539 -19.444 63.239 -14.754 63.239 Z"/>
+            <path fill="#FBBC05" d="M -21.484 53.529 C -21.734 52.809 -21.864 52.039 -21.864 51.239 C -21.864 50.439 -21.724 49.669 -21.484 48.949 L -21.484 45.859 L -25.464 45.859 C -26.284 47.479 -26.754 49.299 -26.754 51.239 C -26.754 53.179 -26.284 54.999 -25.464 56.619 L -21.484 53.529 Z"/>
+            <path fill="#EA4335" d="M -14.754 43.989 C -12.984 43.989 -11.404 44.599 -10.154 45.789 L -6.734 42.369 C -8.804 40.429 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z"/>
+          </g>
+        </svg>
+        <span class="font-semibold text-gray-700">Sign up with Google</span>
+      </a>
+
+      <p class="text-center text-xs text-gray-400 mb-5">Quick • Secure • No password needed</p>
+
+      <!-- Divider -->
+      <div class="relative mb-5">
+        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
+        <div class="relative flex justify-center text-sm">
+          <span class="px-3 bg-white text-gray-400 text-xs">or register with email</span>
+        </div>
+      </div>
+
+      <form method="post" class="space-y-5" id="registerForm">
+        {% csrf_token %}
+
+        <!-- Name Fields -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
+              First Name <span class="text-red-500">*</span>
+            </label>
+            <input type="text" 
+                   name="{{ form.first_name.html_name }}" 
+                   id="{{ form.first_name.id_for_label }}"
+                   value="{{ form.first_name.value|default_if_none:'' }}"
+                   class="w-full px-4 py-3 border {% if form.first_name.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors placeholder-gray-400"
+                   placeholder="John"
+                   required>
+            {% if form.first_name.errors %}<p class="text-red-500 text-xs mt-1">{{ form.first_name.errors.0 }}</p>{% endif %}
+          </div>
+          <div>
+            <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
+              Last Name <span class="text-red-500">*</span>
+            </label>
+            <input type="text" 
+                   name="{{ form.last_name.html_name }}" 
+                   id="{{ form.last_name.id_for_label }}"
+                   value="{{ form.last_name.value|default_if_none:'' }}"
+                   class="w-full px-4 py-3 border {% if form.last_name.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors placeholder-gray-400"
+                   placeholder="Doe"
+                   required>
+            {% if form.last_name.errors %}<p class="text-red-500 text-xs mt-1">{{ form.last_name.errors.0 }}</p>{% endif %}
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div>
+          <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
+            Email Address <span class="text-red-500">*</span>
+          </label>
+          <input type="email" 
+                 name="{{ form.email.html_name }}" 
+                 id="{{ form.email.id_for_label }}"
+                 value="{{ form.email.value|default_if_none:'' }}"
+                 class="w-full px-4 py-3 border {% if form.email.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors placeholder-gray-400"
+                 placeholder="you@example.com"
+                 required>
+          {% if form.email.errors %}<p class="text-red-500 text-xs mt-1">{{ form.email.errors.0 }}</p>{% endif %}
+        </div>
+
+        <!-- Phone -->
+        <div>
+          <label for="{{ form.phone_number.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
+            Phone Number <span class="text-gray-400 text-xs">(Optional)</span>
+          </label>
+          <input type="tel" 
+                 name="{{ form.phone_number.html_name }}" 
+                 id="{{ form.phone_number.id_for_label }}"
+                 value="{{ form.phone_number.value|default_if_none:'' }}"
+                 class="w-full px-4 py-3 border {% if form.phone_number.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors placeholder-gray-400"
+                 placeholder="+1234567890">
+          {% if form.phone_number.errors %}<p class="text-red-500 text-xs mt-1">{{ form.phone_number.errors.0 }}</p>{% endif %}
+        </div>
+
+        <!-- Date of Birth & Country -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="{{ form.date_of_birth.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
+              Date of Birth
+            </label>
+            <input type="date" 
+                   name="{{ form.date_of_birth.html_name }}" 
+                   id="{{ form.date_of_birth.id_for_label }}"
+                   value="{{ form.date_of_birth.value|date:'Y-m-d'|default_if_none:'' }}"
+                   class="w-full px-4 py-3 border {% if form.date_of_birth.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors">
+            {% if form.date_of_birth.errors %}<p class="text-red-500 text-xs mt-1">{{ form.date_of_birth.errors.0 }}</p>{% endif %}
+          </div>
+          <div>
+            <label for="{{ form.country.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
+              Country
+            </label>
+            <select name="{{ form.country.html_name }}" 
+                    id="{{ form.country.id_for_label }}"
+                    class="w-full px-4 py-3 border {% if form.country.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors bg-white">
+              {% for code,label in form.country.field.choices %}
+              <option value="{{ code }}" {% if form.country.value|stringformat:'s' == code|stringformat:'s' %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            {% if form.country.errors %}<p class="text-red-500 text-xs mt-1">{{ form.country.errors.0 }}</p>{% endif %}
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div x-data="{ showPass: false }">
+          <label for="password1" class="block text-sm font-medium text-gray-700 mb-1.5">
+            Password <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <input :type="showPass ? 'text' : 'password'" 
+                   name="{{ form.password1.html_name }}" 
+                   id="password1"
+                   class="w-full px-4 py-3 border {% if form.password1.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors placeholder-gray-400 pr-12"
+                   placeholder="Create a strong password"
+                   required>
+            <button type="button" @click="showPass = !showPass" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <i :class="showPass ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+            </button>
+          </div>
+          {% if form.password1.errors %}<p class="text-red-500 text-xs mt-1">{{ form.password1.errors.0 }}</p>{% endif %}
+          <p class="text-xs text-gray-400 mt-1">Min 8 characters, include uppercase, lowercase, number & special char</p>
+        </div>
+
+        <!-- Confirm Password -->
+        <div x-data="{ showPass: false }">
+          <label for="password2" class="block text-sm font-medium text-gray-700 mb-1.5">
+            Confirm Password <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <input :type="showPass ? 'text' : 'password'" 
+                   name="{{ form.password2.html_name }}" 
+                   id="password2"
+                   class="w-full px-4 py-3 border {% if form.password2.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors placeholder-gray-400 pr-12"
+                   placeholder="Confirm your password"
+                   required>
+            <button type="button" @click="showPass = !showPass" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <i :class="showPass ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+            </button>
+          </div>
+          {% if form.password2.errors %}<p class="text-red-500 text-xs mt-1">{{ form.password2.errors.0 }}</p>{% endif %}
+        </div>
+
+        <!-- Terms & Conditions -->
+        <div class="flex items-start gap-3">
+          <input type="checkbox" 
+                 name="{{ form.terms_accepted.html_name }}" 
+                 id="{{ form.terms_accepted.id_for_label }}"
+                 class="mt-1 w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 border-gray-300"
+                 required>
+          <label for="{{ form.terms_accepted.id_for_label }}" class="text-sm text-gray-600">
+            I agree to the <a href="/terms" target="_blank" class="text-[#003580] hover:underline font-medium">Terms of Service</a> and <a href="/privacy" target="_blank" class="text-[#003580] hover:underline font-medium">Privacy Policy</a> <span class="text-red-500">*</span>
+          </label>
+        </div>
+
+        <!-- Marketing Opt-in -->
+        <div class="flex items-start gap-3">
+          <input type="checkbox" 
+                 name="{{ form.marketing_opt_in.html_name }}" 
+                 id="{{ form.marketing_opt_in.id_for_label }}"
+                 class="mt-1 w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 border-gray-300"
+                 checked>
+          <label for="{{ form.marketing_opt_in.id_for_label }}" class="text-sm text-gray-500">
+            Receive special offers, travel tips, and updates
+          </label>
+        </div>
+
+        {% if form.non_field_errors %}
+        <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+          {% for error in form.non_field_errors %}
+          <p class="text-red-800 text-sm"><i class="fas fa-exclamation-triangle mr-1"></i>{{ error }}</p>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold transition-colors">
+          <i class="fas fa-user-plus mr-2"></i>Create Account
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Login Link -->
+  <div class="mt-6 text-center">
+    <p class="text-gray-600">
+      Already have an account?
+      <a href="{% url 'accounts:login' %}" class="font-semibold text-[#003580] hover:underline">Sign In</a>
+    </p>
+  </div>
+
+  <!-- Trust Badges -->
+  <div class="mt-6 bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm text-emerald-800">
+    <p class="font-semibold mb-2"><i class="fas fa-shield-alt mr-1"></i>Your data is safe</p>
+    <ul class="list-disc list-inside space-y-1 text-emerald-700">
+      <li>256-bit SSL encryption on all data</li>
+      <li>We never share your info with third parties</li>
+      <li>GDPR compliant data handling</li>
+    </ul>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+{% endblock %}

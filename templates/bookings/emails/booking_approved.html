@@ -1,0 +1,19 @@
+{% extends 'emails/base_email.html' %}
+
+{% block subject %}Your booking has been approved - Marvel Safari{% endblock %}
+
+{% block content %}
+  <h1 style="font-size:22px; margin:0 0 10px;">Your booking has been approved ✅</h1>
+  <p style="margin:0 0 12px;">Hi {{ user_name }},</p>
+  <p style="margin:0 0 16px;">Your booking for <strong>{{ listing_label }}</strong> has been approved by the host.</p>
+
+  {% if date_info %}
+  <div style="margin:18px 0; padding:14px 16px; border-radius:12px; background-color:#f9fafb; border:1px solid #e5e7eb;">
+    <p style="margin:0;"><strong>Dates:</strong> {{ date_info }}</p>
+  </div>
+  {% endif %}
+
+  <p style="margin:0 0 16px;">You can view all the details and manage your trip from your Marvel Safari account.</p>
+
+  <p style="margin:0;">We look forward to hosting you.<br>Marvel Safari Team</p>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Car Submitted - Marvel Safari{% endblock %}
+
+{% block content %}
+<section class="max-w-3xl mx-auto px-4 py-12 text-center">
+  <div class="bg-white border border-gray-100 rounded-3xl shadow-sm p-10">
+    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-50 text-green-600 mb-4">
+      <i class="fas fa-check text-2xl"></i>
+    </div>
+    <h1 class="font-display text-3xl font-bold mb-3">We received your car</h1>
+    <p class="text-gray-600 mb-6">Our team will review the listing shortly. You will get an email when it is approved or if we need more details.</p>
+    <div class="flex items-center justify-center gap-3">
+      <a href="{% url 'car_rentals:car_list' %}" class="px-4 py-2 rounded-lg bg-[#003580] text-white font-semibold hover:bg-[#002e6b]">Back to cars</a>
+      <a href="{% url 'car_rentals:car_submission' %}" class="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">Submit another car</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

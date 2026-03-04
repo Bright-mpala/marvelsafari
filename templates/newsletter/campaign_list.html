@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}My Campaigns{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-10">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">Newsletter Campaigns</h1>
+        <a href="{% url 'newsletter:campaign_create' %}" class="px-4 py-2 rounded-lg bg-[#003580] text-white hover:bg-[#00264f]">Create Campaign</a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mb-4 rounded-md px-4 py-3 bg-green-50 text-green-700 border border-green-200">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="bg-white rounded-lg shadow overflow-x-auto">
+        <table class="min-w-full text-left">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-sm font-semibold text-gray-700">Title</th>
+                    <th class="px-4 py-3 text-sm font-semibold text-gray-700">Subject</th>
+                    <th class="px-4 py-3 text-sm font-semibold text-gray-700">Status</th>
+                    <th class="px-4 py-3 text-sm font-semibold text-gray-700">Created</th>
+                    <th class="px-4 py-3 text-sm font-semibold text-gray-700">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for campaign in campaigns %}
+                    <tr class="border-t border-gray-100">
+                        <td class="px-4 py-3">{{ campaign.title }}</td>
+                        <td class="px-4 py-3">{{ campaign.subject }}</td>
+                        <td class="px-4 py-3">
+                            {% if campaign.status == 'sent' %}
+                                <span class="px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-700">Sent</span>
+                            {% else %}
+                                <span class="px-2 py-1 rounded text-xs font-semibold bg-yellow-100 text-yellow-700">Draft</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3">{{ campaign.created_at|date:'Y-m-d H:i' }}</td>
+                        <td class="px-4 py-3">
+                            {% if campaign.status == 'draft' %}
+                                <a href="{% url 'newsletter:send_campaign' campaign.pk %}" class="text-[#003580] font-medium hover:underline">Send now</a>
+                            {% else %}
+                                <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-4 py-6 text-center text-gray-500">No campaigns yet.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

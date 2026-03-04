@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% load property_filters %}
+{% load static %}
+
+{% block title %}My Properties - Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="mb-1">My Properties</h2>
+            <p class="text-muted">Manage your property listings and track their status.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'properties:create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i> Add New Property
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-6 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center py-3">
+                    <h3 class="mb-0">{{ stats.approved|default:0 }}</h3>
+                    <small>Active</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body text-center py-3">
+                    <h3 class="mb-0">{{ stats.pending|default:0 }}</h3>
+                    <small>Pending Review</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="card bg-secondary text-white">
+                <div class="card-body text-center py-3">
+                    <h3 class="mb-0">{{ stats.draft|default:0 }}</h3>
+                    <small>Drafts</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center py-3">
+                    <h3 class="mb-0">{{ stats.rejected|default:0 }}</h3>
+                    <small>Rejected</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="draft" {% if request.GET.status == 'draft' %}selected{% endif %}>Draft</option>
+                        <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending Review</option>
+                        <option value="approved" {% if request.GET.status == 'approved' %}selected{% endif %}>Approved</option>
+                        <option value="rejected" {% if request.GET.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                        <option value="suspended" {% if request.GET.status == 'suspended' %}selected{% endif %}>Suspended</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Sort By</label>
+                    <select name="sort" class="form-select">
+                        <option value="-created_at" {% if request.GET.sort == '-created_at' %}selected{% endif %}>Newest First</option>
+                        <option value="created_at" {% if request.GET.sort == 'created_at' %}selected{% endif %}>Oldest First</option>
+                        <option value="name" {% if request.GET.sort == 'name' %}selected{% endif %}>Name A-Z</option>
+                        <option value="-name" {% if request.GET.sort == '-name' %}selected{% endif %}>Name Z-A</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-outline-primary me-2">
+                        <i class="bi bi-funnel me-1"></i> Filter
+                    </button>
+                    <a href="{% url 'properties:owner_list' %}" class="btn btn-outline-secondary">
+                        Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Property List -->
+    {% if properties %}
+    <div class="row">
+        {% for property in properties %}
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="row g-0">
+                    <div class="col-md-4">
+                        {% if property.images.exists %}
+                        <img src="{{ property|property_primary_image_url }}" 
+                             alt="{{ property.name }}"
+                             class="img-fluid h-100"
+                             style="object-fit: cover; min-height: 200px;">
+                        {% else %}
+                        <div class="bg-light h-100 d-flex align-items-center justify-content-center" style="min-height: 200px;">
+                            <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card-body d-flex flex-column h-100">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0">{{ property.name|truncatechars:30 }}</h5>
+                                {% if property.status == 'draft' %}
+                                <span class="badge bg-secondary">Draft</span>
+                                {% elif property.status == 'pending' %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif property.status == 'approved' %}
+                                <span class="badge bg-success">Active</span>
+                                {% elif property.status == 'rejected' %}
+                                <span class="badge bg-danger">Rejected</span>
+                                {% elif property.status == 'suspended' %}
+                                <span class="badge bg-dark">Suspended</span>
+                                {% endif %}
+                            </div>
+                            
+                            <small class="text-muted mb-2">
+                                <i class="bi bi-geo-alt me-1"></i>
+                                {{ property.city }}, {{ property.country.name }}
+                            </small>
+                            
+                            <p class="card-text text-muted small flex-grow-1">
+                                {{ property.description|truncatechars:100 }}
+                            </p>
+
+                            {% if property.status == 'rejected' and property.rejection_reason %}
+                            <div class="alert alert-danger py-2 small mb-2">
+                                <strong>Rejection Reason:</strong><br>
+                                {{ property.rejection_reason|truncatechars:100 }}
+                            </div>
+                            {% endif %}
+                            
+                            <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar me-1"></i>
+                                    {{ property.created_at|date:"M d, Y" }}
+                                </small>
+                                <div class="btn-group btn-group-sm">
+                                    {% if property.status == 'draft' %}
+                                    <a href="{% url 'properties:edit' property.slug %}" 
+                                       class="btn btn-outline-primary" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'properties:submit_for_review' property.slug %}" 
+                                       class="btn btn-outline-success" title="Submit for Review">
+                                        <i class="bi bi-send"></i>
+                                    </a>
+                                    {% elif property.status == 'pending' %}
+                                    <a href="{% url 'properties:detail' property.slug %}" 
+                                       class="btn btn-outline-secondary" title="View">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    {% elif property.status == 'approved' %}
+                                    <a href="{% url 'properties:detail' property.slug %}" 
+                                       class="btn btn-outline-secondary" title="View">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'properties:edit' property.slug %}" 
+                                       class="btn btn-outline-primary" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    {% elif property.status == 'rejected' %}
+                                    <a href="{% url 'properties:edit' property.slug %}" 
+                                       class="btn btn-outline-primary" title="Revise & Resubmit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <nav aria-label="Property list pagination">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">&laquo; First</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">Previous</a>
+            </li>
+            {% endif %}
+            
+            <li class="page-item active">
+                <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            </li>
+            
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">Next</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">Last &raquo;</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="card shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-house-slash display-1 text-muted mb-3"></i>
+            <h4>No Properties Found</h4>
+            {% if request.GET.status %}
+            <p class="text-muted">No properties match the current filter criteria.</p>
+            <a href="{% url 'properties:owner_list' %}" class="btn btn-outline-secondary me-2">Clear Filter</a>
+            {% else %}
+            <p class="text-muted">You haven't created any properties yet.</p>
+            {% endif %}
+            <a href="{% url 'properties:create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i> Add Your First Property
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

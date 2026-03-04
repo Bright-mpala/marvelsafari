@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Blog Post{% endblock %}
+
+{% block content %}
+<section class="max-w-3xl mx-auto px-4 py-10 animate-scale-in">
+    <div class="mb-6">
+        <h1 class="font-display text-3xl font-bold text-gray-900">{% if post %}Edit{% else %}Create{% endif %} blog post</h1>
+        <p class="text-gray-600">Share stories, tips, and destination insights with travelers.</p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="card card-body space-y-5">
+        {% csrf_token %}
+        <div>
+            <label class="form-label">Title</label>
+            {{ form.title }}
+        </div>
+        <div>
+            <label class="form-label">Slug</label>
+            {{ form.slug }}
+        </div>
+        <div>
+            <label class="form-label">Category</label>
+            {{ form.category }}
+        </div>
+        <div>
+            <label class="form-label">Featured image</label>
+            {{ form.featured_image }}
+        </div>
+        <div>
+            <label class="form-label">Excerpt</label>
+            {{ form.excerpt }}
+        </div>
+        <div>
+            <label class="form-label">Content</label>
+            {{ form.content }}
+        </div>
+        <div class="flex items-center gap-2">
+            {{ form.is_published }}
+            <label class="text-sm text-gray-700">Publish immediately</label>
+        </div>
+
+        <div class="flex flex-wrap gap-3">
+            <button type="submit" class="btn btn-primary">Save post</button>
+            <a href="{% url 'blog:post_list' %}" class="btn btn-ghost">Cancel</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

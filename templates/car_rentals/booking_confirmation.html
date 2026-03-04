@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}Booking Confirmed - Marvel Safari{% endblock %}
+
+{% block content %}
+<section class="max-w-3xl mx-auto px-4 py-12 animate-fade-in">
+
+ <!-- Success Header -->
+ <div class="text-center mb-8">
+  <div class="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
+   <i class="fas fa-check-circle text-4xl text-green-500"></i>
+  </div>
+  <h1 class="text-3xl font-bold text-gray-900 mb-2">Booking Confirmed!</h1>
+  <p class="text-gray-500">Your car rental has been successfully booked</p>
+ </div>
+
+ <!-- Booking Card -->
+ <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+
+  <!-- Booking Header -->
+  <div class="bg-[#003580] px-6 py-4 flex items-center justify-between">
+   <div>
+    <p class="text-white/70 text-xs uppercase tracking-wider">Booking Reference</p>
+    <p class="text-white text-xl font-mono font-bold">{{ booking.booking_reference }}</p>
+   </div>
+   <span class="px-3 py-1 bg-green-500/20 text-green-200 text-sm font-medium rounded-full">
+    <i class="fas fa-check mr-1"></i>{{ booking.get_status_display }}
+   </span>
+  </div>
+
+  <div class="p-6 space-y-6">
+
+   <!-- Car Details -->
+   <div class="flex gap-4 items-start">
+    {% if booking.car.primary_image_url %}
+    <img src="{{ booking.car.primary_image_url }}" alt="{{ booking.car.make }} {{ booking.car.model }}" class="w-28 h-20 object-cover rounded-xl">
+    {% else %}
+    <div class="w-28 h-20 bg-gray-100 rounded-xl flex items-center justify-center"><i class="fas fa-car text-2xl text-gray-300"></i></div>
+    {% endif %}
+    <div>
+     <h3 class="font-bold text-lg text-gray-900">{{ booking.car.make }} {{ booking.car.model }}</h3>
+     <p class="text-sm text-gray-500">{{ booking.car.year }} &bull; {{ booking.car.company.name }}</p>
+     <div class="flex gap-2 mt-1">
+      <span class="text-xs bg-gray-100 px-2 py-0.5 rounded"><i class="fas fa-user-friends mr-1 text-gray-400"></i>{{ booking.car.seats }} seats</span>
+      <span class="text-xs bg-gray-100 px-2 py-0.5 rounded"><i class="fas fa-cog mr-1 text-gray-400"></i>{{ booking.category.name }}</span>
+     </div>
+    </div>
+   </div>
+
+   <hr class="border-gray-100">
+
+   <!-- Trip Details -->
+   <div class="grid sm:grid-cols-2 gap-4">
+    <div class="bg-green-50 rounded-xl p-4">
+     <p class="text-xs font-semibold text-green-700 uppercase tracking-wider mb-1"><i class="fas fa-map-pin mr-1"></i>Pickup</p>
+     <p class="font-medium text-gray-900">{{ booking.pickup_location.name }}</p>
+     <p class="text-sm text-gray-600">{{ booking.pickup_date|date:"D, d M Y" }} at {{ booking.pickup_time|time:"H:i" }}</p>
+    </div>
+    <div class="bg-red-50 rounded-xl p-4">
+     <p class="text-xs font-semibold text-red-700 uppercase tracking-wider mb-1"><i class="fas fa-flag-checkered mr-1"></i>Dropoff</p>
+     <p class="font-medium text-gray-900">{{ booking.dropoff_location.name }}</p>
+     <p class="text-sm text-gray-600">{{ booking.dropoff_date|date:"D, d M Y" }} at {{ booking.dropoff_time|time:"H:i" }}</p>
+    </div>
+   </div>
+
+   <!-- Driver Details -->
+   <div class="bg-gray-50 rounded-xl p-4">
+    <h4 class="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3"><i class="fas fa-id-card mr-1 text-[#003580]"></i>Driver Information</h4>
+    <div class="grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+     <div class="flex justify-between"><span class="text-gray-500">Name</span><span class="font-medium text-gray-900">{{ booking.driver_name|default:"Not specified" }}</span></div>
+     <div class="flex justify-between"><span class="text-gray-500">Email</span><span class="font-medium text-gray-900">{{ booking.driver_email|default:"Not specified" }}</span></div>
+     <div class="flex justify-between"><span class="text-gray-500">Phone</span><span class="font-medium text-gray-900">{{ booking.driver_phone|default:"Not specified" }}</span></div>
+     <div class="flex justify-between"><span class="text-gray-500">License</span><span class="font-medium text-gray-900">{{ booking.driver_license_number|default:"Not specified" }}</span></div>
+    </div>
+   </div>
+
+   <!-- Pricing -->
+   <div class="bg-blue-50 rounded-xl p-4">
+    <div class="flex items-center justify-between">
+     <div>
+      <p class="text-xs text-gray-600 uppercase tracking-wider">Total Amount</p>
+      <p class="text-3xl font-bold text-[#003580]">{{ booking.currency }} {{ booking.total_amount|floatformat:2 }}</p>
+     </div>
+     <div class="text-right text-sm text-gray-600">
+      <p>Payment: {{ booking.get_payment_status_display }}</p>
+      <p class="text-xs mt-1">{{ booking.rental_days }} day{{ booking.rental_days|pluralize }} @ {{ booking.currency }} {{ booking.daily_rate|floatformat:2 }}/day</p>
+     </div>
+    </div>
+   </div>
+  </div>
+ </div>
+
+ <!-- Actions -->
+ <div class="flex flex-wrap gap-3 mt-6 justify-center">
+  <a href="{% url 'car_rentals:my_bookings' %}" class="inline-flex items-center gap-2 bg-[#003580] hover:bg-[#00264f] text-white px-6 py-3 rounded-xl font-semibold transition-colors">
+   <i class="fas fa-list"></i>My Bookings
+  </a>
+  {% if booking.car %}
+  <a href="{% url 'car_rentals:track_car' booking.booking_reference %}" class="inline-flex items-center gap-2 bg-[#0071c2] hover:bg-[#005999] text-white px-6 py-3 rounded-xl font-semibold transition-colors">
+   <i class="fas fa-map-marker-alt"></i>Track Car
+  </a>
+  {% endif %}
+  <a href="{% url 'car_rentals:car_list' %}" class="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-medium transition-colors">
+   <i class="fas fa-search"></i>Browse Cars
+  </a>
+ </div>
+
+ <!-- Info Box -->
+ <div class="mt-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800">
+  <p class="font-semibold mb-1"><i class="fas fa-info-circle mr-1"></i>What happens next?</p>
+  <ul class="list-disc list-inside space-y-1 text-yellow-700">
+   <li>A confirmation email has been sent to {{ booking.driver_email|default:booking.user.email }}</li>
+   <li>Present your booking reference at the pickup location</li>
+   <li>Bring a valid driver's license and credit card</li>
+   <li>Free cancellation up to 48 hours before pickup</li>
+  </ul>
+ </div>
+</section>
+{% endblock %}

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="600" height="400" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e0e7ff" />
+      <stop offset="100%" stop-color="#c7d2fe" />
+    </linearGradient>
+  </defs>
+  <rect width="600" height="400" fill="url(#bg)" />
+  <g fill="#4c1d95" font-family="'Segoe UI', Arial, sans-serif">
+    <text x="50%" y="48%" text-anchor="middle" font-size="56" font-weight="bold">Marvel Safari</text>
+    <text x="50%" y="65%" text-anchor="middle" font-size="26" fill="#312e81">Image coming soon</text>
+  </g>
+</svg>

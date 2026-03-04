@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Confirm your email" %} - Marvel Safari{% endblock %}
+
+{% block content %}
+<div class="min-h-[60vh] flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 py-16 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-lg w-full space-y-8">
+    <div class="text-center space-y-3">
+      <div class="mx-auto inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/5 ring-2 ring-[#feba02]/40 shadow-lg shadow-[#feba02]/20">
+        <i class="fas fa-envelope-open-text text-2xl text-white"></i>
+      </div>
+      <h1 class="text-3xl font-bold tracking-tight text-white">
+        {% trans "Confirm your email" %}
+      </h1>
+      <p class="text-sm text-slate-300 max-w-md mx-auto">
+        {% blocktrans %}Tap the button below to verify that <span class="font-semibold">{{ email_address.email }}</span> belongs to you so we can secure your Marvel Safari account.{% endblocktrans %}
+      </p>
+    </div>
+
+    <div class="relative overflow-hidden rounded-2xl bg-slate-900/80 border border-slate-700 shadow-2xl backdrop-blur">
+      <div class="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_top,_#feba02_0,_transparent_45%),_radial-gradient(circle_at_bottom,_#0ea5e9_0,_transparent_50%)]"></div>
+      <div class="relative p-6 space-y-5 text-slate-100 text-sm">
+        {% if confirmation %}
+          <p class="leading-relaxed">
+            {% blocktrans with email=confirmation.email_address.email %}
+              Please confirm that <span class="font-semibold">{{ email }}</span> is the email address for your Marvel Safari account.
+            {% endblocktrans %}
+          </p>
+
+          <form method="post" class="pt-2 space-y-3">
+            {% csrf_token %}
+            <button type="submit" class="w-full inline-flex justify-center items-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-slate-900 bg-[#feba02] hover:bg-[#fbbf24] shadow-lg shadow-slate-900/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#feba02] focus:ring-offset-slate-900 transition-all">
+              <i class="fas fa-check-circle"></i>
+              {% trans "Confirm email" %}
+            </button>
+          </form>
+
+          <p class="text-[11px] text-slate-300/80">
+            {% trans "If you did not request this, you can safely ignore this page." %}
+          </p>
+        {% else %}
+          <p class="leading-relaxed text-slate-200">
+            {% trans "This email confirmation link is invalid or has already been used." %}
+          </p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="text-center text-xs text-slate-400">
+      <p>
+        {% trans "Need help?" %}
+        <a href="/contact/" class="text-[#feba02] hover:text-white font-semibold">{% trans "Contact support" %}</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

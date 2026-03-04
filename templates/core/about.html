@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}About Us - Marvel Safari{% endblock %}
+
+{% block meta_description %}Learn about Marvel Safari, your trusted partner for authentic African adventures. Discover our passion for sustainable tourism and commitment to exceptional safari experiences.{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-yellow-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-6xl mx-auto">
+    <!-- Hero Section -->
+    <div class="text-center mb-16">
+      <div class="mx-auto h-20 w-20 bg-gradient-to-r from-[#003580] to-[#002d5a] rounded-full flex items-center justify-center mb-6">
+        <svg class="h-10 w-10 text-[#feba02]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+        </svg>
+      </div>
+      <h1 class="text-5xl font-bold tracking-tight mb-4">
+        <span class="text-[#feba02]">About</span>
+        <span class="text-[#003580]">Marvel Safari</span>
+      </h1>
+      <p class="text-xl text-gray-600 max-w-3xl mx-auto">Creating unforgettable African adventures with authenticity, sustainability, and exceptional service.</p>
+    </div>
+
+    <!-- Our Story -->
+    <div class="bg-white rounded-2xl shadow-xl p-8 lg:p-12 mb-16">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div>
+          <h2 class="text-3xl font-bold text-gray-900 mb-6">Our Story</h2>
+          <div class="space-y-4 text-gray-600">
+            <p>Marvel Safari was born from a passion for sharing Africa's incredible wildlife and cultural heritage with the world. We believe that every traveler deserves an authentic, sustainable, and unforgettable safari experience.</p>
+            <p>Our mission is simple: to connect adventurers with the real Africa - from the majestic wildlife migrations to the warm hospitality of local communities. We're committed to responsible tourism that benefits both travelers and the destinations we love.</p>
+            <p>Every safari we organize is designed with care, ensuring that your journey not only creates lasting memories but also contributes positively to conservation and community development across Kenya and East Africa.</p>
+          </div>
+        </div>
+        <div class="relative">
+          <img src="{% static 'images/about-hero.jpg' %}" alt="African Safari Landscape" class="rounded-xl shadow-lg w-full h-80 object-cover" onerror="this.src='https://images.unsplash.com/photo-1516426122078-c23e76319801?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'">
+        </div>
+      </div>
+    </div>
+
+    <!-- Our Values -->
+    <div class="mb-16">
+      <h2 class="text-3xl font-bold text-center text-gray-900 mb-12">Our Values</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+          <div class="w-16 h-16 bg-[#003580] rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-[#feba02]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-3">Authenticity</h3>
+          <p class="text-gray-600">We provide genuine African experiences, connecting you with local communities and traditions.</p>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+          <div class="w-16 h-16 bg-[#003580] rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-[#feba02]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"></path>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-3">Sustainability</h3>
+          <p class="text-gray-600">We commit to eco-friendly practices and support conservation efforts across Africa.</p>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+          <div class="w-16 h-16 bg-[#003580] rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-[#feba02]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-3">Excellence</h3>
+          <p class="text-gray-600">We deliver exceptional service with attention to detail and personalized care.</p>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+          <div class="w-16 h-16 bg-[#003580] rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-[#feba02]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-3">Community</h3>
+          <p class="text-gray-600">We empower local communities through tourism and create positive social impact.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Our Impact -->
+    <div class="bg-gradient-to-r from-[#003580] to-[#002d5a] rounded-2xl p-8 lg:p-12 text-white mb-16">
+      <h2 class="text-3xl font-bold text-center mb-12">Our Vision</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+        <div>
+          <div class="text-4xl font-bold text-[#feba02] mb-2">🌍</div>
+          <p class="text-gray-300">Authentic Experiences</p>
+        </div>
+        <div>
+          <div class="text-4xl font-bold text-[#feba02] mb-2">🌱</div>
+          <p class="text-gray-300">Sustainable Tourism</p>
+        </div>
+        <div>
+          <div class="text-4xl font-bold text-[#feba02] mb-2">🤝</div>
+          <p class="text-gray-300">Community Support</p>
+        </div>
+        <div>
+          <div class="text-4xl font-bold text-[#feba02] mb-2">⭐</div>
+          <p class="text-gray-300">Exceptional Service</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="text-center">
+      <h2 class="text-3xl font-bold text-gray-900 mb-4">Ready for Your Adventure?</h2>
+      <p class="text-xl text-gray-600 mb-8">Join thousands of travelers who have discovered Africa's magic with us.</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="{% url 'properties:list' %}" class="bg-[#003580] text-white px-8 py-4 rounded-lg hover:bg-[#002d5a] transition-colors font-semibold text-lg">
+          Start Planning
+        </a>
+        <a href="{% url 'core:contact' %}" class="border-2 border-[#003580] text-[#003580] px-8 py-4 rounded-lg hover:bg-[#003580] hover:text-white transition-colors font-semibold text-lg">
+          Contact Us
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
