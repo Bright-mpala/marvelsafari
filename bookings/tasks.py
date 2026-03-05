@@ -9,6 +9,7 @@ Asynchronous tasks for:
 """
 
 from celery import shared_task
+from django.conf import settings
 from django.utils import timezone
 import logging
 
@@ -21,8 +22,12 @@ def expire_pending_bookings(self, minutes=30):
     Background task to expire old pending bookings.
     
     Called every 5 minutes by Celery Beat.
-    Auto-cancels bookings that haven't been paid for.
+    Auto-cancels bookings that haven't been paid for when payment is enabled.
     """
+    if not getattr(settings, 'BOOKING_REQUIRE_PAYMENT', False):
+        logger.info("Skipping expire_pending_bookings task because payment is disabled.")
+        return {'status': 'skipped', 'reason': 'payment_disabled'}
+
     try:
         from bookings.services import BookingService
         service = BookingService()

@@ -7,6 +7,7 @@ and handles domain-specific operations like booking workflows.
 
 import logging
 from decimal import Decimal
+from django.conf import settings
 from django.utils import timezone
 from django.db import transaction
 from core.exceptions import (
@@ -343,7 +344,10 @@ class BookingService:
     @staticmethod
     def expire_pending_bookings(minutes=30):
         """
-        Expire old pending bookings (auto-cancel unpaid bookings).
+        Expire old pending bookings.
+
+        When payment is disabled, this task becomes a no-op so pending bookings
+        can stay open for manual host/approver workflows.
         
         Called by scheduled Celery task.
         
@@ -353,6 +357,10 @@ class BookingService:
         Returns:
             Number of bookings expired
         """
+        if not getattr(settings, 'BOOKING_REQUIRE_PAYMENT', False):
+            logger.info("Skipping pending booking expiration because payment is disabled.")
+            return 0
+
         bookings = BookingRepository.get_pending_expiring_bookings(minutes=minutes)
         expired_count = 0
         

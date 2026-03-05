@@ -18,7 +18,7 @@
 <section class="max-w-7xl mx-auto px-4 py-10 animate-fade-in">
 	{% if not business_account %}
 	<div class="card card-body text-center">
-		<div class="text-5xl mb-3">🏢</div>
+		<div class="text-5xl mb-3"><i class="fa-solid fa-building"></i></div>
 		<h1 class="text-2xl font-bold text-gray-900">No business account connected</h1>
 		<p class="text-gray-600 mt-2">Enable a business account from your profile to unlock approvals, budgets, and team travel controls.</p>
 		<a href="{% url 'accounts:profile_edit' %}" class="btn btn-primary mt-4">Set up business account</a>
@@ -40,7 +40,7 @@
 			<p class="text-sm text-gray-500">Pending approvals</p>
 			<div class="flex items-end justify-between mt-2">
 				<p class="text-3xl font-bold text-amber-600">{{ pending_approvals }}</p>
-				<span class="text-xs trend-up"><i class="fa-solid fa-arrow-up"></i> {{ pending_trend|default:"8%" }}</span>
+				<span class="text-xs {% if pending_trend|slice:':1' == '-' %}trend-down{% else %}trend-up{% endif %}">{{ pending_trend }} (30d)</span>
 			</div>
 			<div class="sparkline mt-3"></div>
 		</div>
@@ -48,7 +48,7 @@
 			<p class="text-sm text-gray-500">Approved requests</p>
 			<div class="flex items-end justify-between mt-2">
 				<p class="text-3xl font-bold text-green-600">{{ approved_approvals }}</p>
-				<span class="text-xs trend-up"><i class="fa-solid fa-arrow-up"></i> {{ approved_trend|default:"4%" }}</span>
+				<span class="text-xs {% if approved_trend|slice:':1' == '-' %}trend-down{% else %}trend-up{% endif %}">{{ approved_trend }} (30d)</span>
 			</div>
 			<div class="sparkline mt-3"></div>
 		</div>
@@ -56,7 +56,7 @@
 			<p class="text-sm text-gray-500">Rejected requests</p>
 			<div class="flex items-end justify-between mt-2">
 				<p class="text-3xl font-bold text-red-600">{{ rejected_approvals }}</p>
-				<span class="text-xs trend-down"><i class="fa-solid fa-arrow-down"></i> {{ rejected_trend|default:"2%" }}</span>
+				<span class="text-xs {% if rejected_trend|slice:':1' == '-' %}trend-down{% else %}trend-up{% endif %}">{{ rejected_trend }} (30d)</span>
 			</div>
 			<div class="sparkline mt-3"></div>
 		</div>
@@ -64,7 +64,7 @@
 			<p class="text-sm text-gray-500">Approved spend</p>
 			<div class="flex items-end justify-between mt-2">
 				<p class="text-3xl font-bold text-gray-900">${{ approved_spend|floatformat:2 }}</p>
-				<span class="text-xs trend-up"><i class="fa-solid fa-arrow-up"></i> {{ spend_trend|default:"6%" }}</span>
+				<span class="text-xs {% if spend_trend|slice:':1' == '-' %}trend-down{% else %}trend-up{% endif %}">{{ spend_trend }} (30d)</span>
 			</div>
 			<div class="sparkline mt-3"></div>
 		</div>
@@ -72,25 +72,36 @@
 
 	<div class="grid lg:grid-cols-3 gap-6 mb-8">
 		<div class="lg:col-span-2 card card-body">
-			<div class="flex items-center justify-between mb-4">
-				<h2 class="text-lg font-semibold text-gray-900">Monthly travel spend</h2>
-				<select class="form-select w-40">
-					<option>Last 6 months</option>
-					<option>Last 12 months</option>
-					<option>Year to date</option>
-				</select>
+			<h2 class="text-lg font-semibold text-gray-900 mb-4">Monthly approved spend (last 6 months)</h2>
+			{% if monthly_summary %}
+			<div class="space-y-3">
+				{% for month in monthly_summary %}
+				<div class="bg-gray-50 border border-gray-100 rounded-lg p-3">
+					<div class="flex items-center justify-between text-sm mb-2">
+						<span class="font-medium text-gray-800">{{ month.month_label }}</span>
+						<span class="font-semibold text-gray-900">${{ month.spend|floatformat:2 }}</span>
+					</div>
+					<div class="h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
+						<div class="h-full bg-blue-600 rounded-full" style="width: {{ month.spend_percent }}%"></div>
+					</div>
+					<p class="text-xs text-gray-500">{{ month.approved_count }} approved, {{ month.pending_count }} pending</p>
+				</div>
+				{% endfor %}
 			</div>
-			<div class="h-64 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-100 flex items-center justify-center text-gray-500">
-				Chart placeholder (integrate Chart.js)
-			</div>
+			{% else %}
+			<p class="text-sm text-gray-600">No approval activity in the last 6 months.</p>
+			{% endif %}
 		</div>
 		<div class="card card-body">
 			<h2 class="text-lg font-semibold text-gray-900 mb-4">Top destinations</h2>
 			<div class="space-y-3">
 				{% for destination in top_destinations %}
-				<div class="flex items-center justify-between text-sm bg-gray-50 rounded-lg px-3 py-2">
-					<span class="text-gray-700">{{ destination.city }}</span>
-					<span class="font-semibold text-gray-900">{{ destination.total }}</span>
+				<div class="text-sm bg-gray-50 rounded-lg px-3 py-2">
+					<div class="flex items-center justify-between">
+						<span class="text-gray-700">{{ destination.city }}, {{ destination.country }}</span>
+						<span class="font-semibold text-gray-900">{{ destination.count }} trips</span>
+					</div>
+					<p class="text-xs text-gray-500 mt-1">Approved spend: ${{ destination.total_amount|floatformat:2 }}</p>
 				</div>
 				{% empty %}
 				<p class="text-sm text-gray-600">No destination data yet.</p>

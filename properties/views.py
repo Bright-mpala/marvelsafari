@@ -579,15 +579,16 @@ def property_availability(request, property_id):
     except ValueError:
         return JsonResponse({'error': _('Invalid date format')}, status=400)
     
-    # Check for overlapping bookings
-    overlapping = Booking.objects.filter(
+    # Check overlapping bookings against property capacity.
+    overlapping_count = Booking.objects.filter(
         property=property_obj,
         status__in=['confirmed', 'pending'],
         check_in_date__lt=check_out_date,
         check_out_date__gt=check_in_date
-    ).exists()
+    ).count()
     
-    if overlapping:
+    capacity = max(1, int(getattr(property_obj, 'total_rooms', 1) or 1))
+    if overlapping_count >= capacity:
         return JsonResponse({
             'available': False,
             'message': _('Property is not available for these dates')

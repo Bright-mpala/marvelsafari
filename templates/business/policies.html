@@ -1,0 +1,365 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Travel Policies - {{ business_account.company_name }} | Marvel Safari{% endblock %}
+
+{% block extra_head %}
+<style>
+    .policy-card {
+        transition: all 0.2s;
+    }
+    .policy-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.15);
+    }
+    .policy-section {
+        border-left: 3px solid var(--primary);
+        padding-left: 1rem;
+        margin: 1rem 0;
+    }
+    .limit-badge {
+        background: #f3f4f6;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Travel Policies</h1>
+            <p class="text-gray-600 mt-1">Configure travel rules and spending limits for your organization</p>
+        </div>
+        <button class="btn btn-primary" onclick="openPolicyModal()">
+            <i class="fa-solid fa-plus"></i>
+            {% if policy %}Edit Policy{% else %}Create Policy{% endif %}
+        </button>
+    </div>
+
+    <div class="grid sm:grid-cols-4 gap-4 mb-8">
+        <div class="stat-card">
+            <p class="text-sm text-gray-500">Active Policies</p>
+            <p class="text-2xl font-bold text-gray-900">{{ policy_count }}</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-sm text-gray-500">Reviewed Requests</p>
+            <p class="text-2xl font-bold text-green-600">{{ total_decisions }}</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-sm text-gray-500">Average Approved Amount</p>
+            <p class="text-2xl font-bold text-amber-600">${{ avg_approved_amount|floatformat:2 }}</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-sm text-gray-500">Pending Approvals</p>
+            <p class="text-2xl font-bold text-blue-600">{{ pending_approvals }}</p>
+        </div>
+    </div>
+
+    {% if policy %}
+    <div class="card policy-card mb-8">
+        <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900">Company Travel Policy</h2>
+                <p class="text-gray-500">Last updated {{ policy.updated_at|date:"M d, Y" }}</p>
+            </div>
+            <button class="btn btn-primary" onclick="openPolicyModal()">
+                <i class="fa-regular fa-pen-to-square"></i>
+                Edit Policy
+            </button>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-8">
+            <div class="policy-section">
+                <h3 class="text-lg font-semibold mb-3 flex items-center">
+                    <i class="fa-solid fa-plane-departure text-primary mr-2"></i>
+                    Flight Policies
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Maximum flight cost</span>
+                        <span class="font-semibold">{% if policy.max_flight_cost %}${{ policy.max_flight_cost|floatformat:2 }}{% else %}Not set{% endif %}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Advance booking</span>
+                        <span class="font-semibold">{{ policy.advance_booking_days }} days minimum</span>
+                    </div>
+                    <div class="flex justify-between items-start gap-3">
+                        <span class="text-gray-600">Allowed classes</span>
+                        <div class="flex flex-wrap gap-1 justify-end">
+                            {% for class in allowed_classes_display %}
+                            <span class="limit-badge">{{ class|title }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-start gap-3">
+                        <span class="text-gray-600">Preferred airlines</span>
+                        <span class="text-gray-900 text-right">
+                            {% if preferred_airlines_display %}
+                                {{ preferred_airlines_display|join:", " }}
+                            {% else %}
+                                <span class="text-gray-400">None specified</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="policy-section">
+                <h3 class="text-lg font-semibold mb-3 flex items-center">
+                    <i class="fa-solid fa-hotel text-primary mr-2"></i>
+                    Hotel Policies
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Maximum per night</span>
+                        <span class="font-semibold">{% if policy.max_hotel_cost_per_night %}${{ policy.max_hotel_cost_per_night|floatformat:2 }}{% else %}Not set{% endif %}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Maximum star rating</span>
+                        <span class="font-semibold">{% if policy.max_star_rating %}{{ policy.max_star_rating }} stars{% else %}Not set{% endif %}</span>
+                    </div>
+                    <div class="flex justify-between items-start gap-3">
+                        <span class="text-gray-600">Preferred chains</span>
+                        <span class="text-gray-900 text-right">
+                            {% if preferred_hotel_chains_display %}
+                                {{ preferred_hotel_chains_display|join:", " }}
+                            {% else %}
+                                <span class="text-gray-400">None specified</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="policy-section">
+                <h3 class="text-lg font-semibold mb-3 flex items-center">
+                    <i class="fa-solid fa-car text-primary mr-2"></i>
+                    Car Rental Policies
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Maximum per day</span>
+                        <span class="font-semibold">{% if policy.max_car_rental_cost_per_day %}${{ policy.max_car_rental_cost_per_day|floatformat:2 }}{% else %}Not set{% endif %}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Insurance required</span>
+                        <span class="font-semibold">{{ policy.insurance_required|yesno:"Yes,No" }}</span>
+                    </div>
+                    <div class="flex justify-between items-start gap-3">
+                        <span class="text-gray-600">Preferred car types</span>
+                        <span class="text-gray-900 text-right">{{ preferred_car_types_display|join:", " }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="policy-section">
+                <h3 class="text-lg font-semibold mb-3 flex items-center">
+                    <i class="fa-solid fa-receipt text-primary mr-2"></i>
+                    Expense Policies
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Daily meal allowance</span>
+                        <span class="font-semibold">{% if policy.daily_meal_allowance %}${{ policy.daily_meal_allowance|floatformat:2 }}{% else %}Not set{% endif %}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Requires receipts</span>
+                        <span class="font-semibold">{{ policy.requires_receipts|yesno:"Yes,No" }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Report deadline</span>
+                        <span class="font-semibold">{{ policy.expense_report_deadline }} days</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-gray-200">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <i class="fa-solid fa-diagram-project text-primary mr-2"></i>
+                Approval Workflow
+            </h3>
+            <div class="flex flex-wrap items-center gap-4">
+                {% for level in approval_levels_display %}
+                <div class="flex items-center">
+                    <div class="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold">
+                        {{ forloop.counter }}
+                    </div>
+                    <div class="ml-2">
+                        <p class="font-medium">{{ level }}</p>
+                        <p class="text-xs text-gray-500">Level {{ forloop.counter }}</p>
+                    </div>
+                    {% if not forloop.last %}
+                    <i class="fa-solid fa-arrow-right mx-4 text-gray-300"></i>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <p class="text-gray-500">No approval levels configured</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card text-center py-12">
+        <div class="text-6xl mb-4"><i class="fa-regular fa-clipboard"></i></div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">No travel policy configured</h3>
+        <p class="text-gray-600 mb-6">Set up your first travel policy to control spending and ensure compliance.</p>
+        <button class="btn btn-primary" onclick="openPolicyModal()">
+            <i class="fa-solid fa-plus"></i>
+            Create Travel Policy
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<div id="policyModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold">{% if policy %}Edit{% else %}Create{% endif %} Travel Policy</h2>
+            <button class="text-gray-400 hover:text-gray-600" onclick="closePolicyModal()">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+
+        <form method="post" action="{% if policy %}{% url 'business:update_policy' policy.id %}{% else %}{% url 'business:create_policy' %}{% endif %}" class="space-y-6">
+            {% csrf_token %}
+
+            <div class="border-b border-gray-200 pb-4">
+                <h3 class="font-semibold text-lg mb-3">Flight Policies</h3>
+                <div class="grid sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Max Flight Cost ($)</label>
+                        <input type="number" name="max_flight_cost" step="0.01" value="{{ policy.max_flight_cost|default:'' }}" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Advance Booking Days</label>
+                        <input type="number" name="advance_booking_days" value="{{ policy.advance_booking_days|default:'14' }}" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Allowed Classes</label>
+                        <div class="flex flex-wrap gap-4">
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="allowed_classes" value="economy" {% if 'economy' in allowed_classes_display %}checked{% endif %}>
+                                <span>Economy</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="allowed_classes" value="premium_economy" {% if 'premium_economy' in allowed_classes_display %}checked{% endif %}>
+                                <span>Premium Economy</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="allowed_classes" value="business" {% if 'business' in allowed_classes_display %}checked{% endif %}>
+                                <span>Business</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="allowed_classes" value="first" {% if 'first' in allowed_classes_display %}checked{% endif %}>
+                                <span>First Class</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Preferred Airlines (comma separated)</label>
+                        <input type="text" name="preferred_airlines" value="{{ preferred_airlines_display|join:', ' }}" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-b border-gray-200 pb-4">
+                <h3 class="font-semibold text-lg mb-3">Hotel Policies</h3>
+                <div class="grid sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Max per Night ($)</label>
+                        <input type="number" name="max_hotel_cost_per_night" step="0.01" value="{{ policy.max_hotel_cost_per_night|default:'' }}" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Max Star Rating</label>
+                        <select name="max_star_rating" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                            <option value="">Not set</option>
+                            <option value="3" {% if policy.max_star_rating == 3 %}selected{% endif %}>3 Stars</option>
+                            <option value="4" {% if policy.max_star_rating == 4 or not policy %}selected{% endif %}>4 Stars</option>
+                            <option value="5" {% if policy.max_star_rating == 5 %}selected{% endif %}>5 Stars</option>
+                        </select>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Preferred Hotel Chains (comma separated)</label>
+                        <input type="text" name="preferred_hotel_chains" value="{{ preferred_hotel_chains_display|join:', ' }}" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-b border-gray-200 pb-4">
+                <h3 class="font-semibold text-lg mb-3">Car Rental Policies</h3>
+                <div class="grid sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Max per Day ($)</label>
+                        <input type="number" name="max_car_rental_cost_per_day" step="0.01" value="{{ policy.max_car_rental_cost_per_day|default:'' }}" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                    </div>
+                    <div class="flex items-center">
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" name="insurance_required" {% if policy.insurance_required or not policy %}checked{% endif %}>
+                            <span>Insurance Required</span>
+                        </label>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Preferred Car Types (comma separated)</label>
+                        <input type="text" name="preferred_car_types" value="{{ preferred_car_types_display|join:', ' }}" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-b border-gray-200 pb-4">
+                <h3 class="font-semibold text-lg mb-3">Expense Policies</h3>
+                <div class="grid sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Daily Meal Allowance ($)</label>
+                        <input type="number" name="daily_meal_allowance" step="0.01" value="{{ policy.daily_meal_allowance|default:'' }}" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Report Deadline (days)</label>
+                        <input type="number" name="expense_report_deadline" value="{{ policy.expense_report_deadline|default:'30' }}" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                    </div>
+                    <div class="flex items-center">
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" name="requires_receipts" {% if policy.requires_receipts or not policy %}checked{% endif %}>
+                            <span>Require receipts for all expenses</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="font-semibold text-lg mb-3">Approval Workflow</h3>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Approval Levels (comma separated)</label>
+                <input type="text" name="approval_levels" value="{{ approval_levels_display|join:', ' }}" class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="Manager, Director, Finance">
+            </div>
+
+            <div class="flex gap-3 pt-4">
+                <button type="submit" class="btn btn-primary flex-1">Save Policy</button>
+                <button type="button" class="btn btn-outline flex-1" onclick="closePolicyModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openPolicyModal() {
+    document.getElementById('policyModal').classList.remove('hidden');
+    document.getElementById('policyModal').classList.add('flex');
+}
+
+function closePolicyModal() {
+    document.getElementById('policyModal').classList.add('hidden');
+    document.getElementById('policyModal').classList.remove('flex');
+}
+
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('policyModal');
+    if (event.target === modal) {
+        closePolicyModal();
+    }
+});
+</script>
+{% endblock %}

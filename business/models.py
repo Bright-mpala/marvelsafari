@@ -336,7 +336,8 @@ class BusinessBookingApproval(models.Model):
     def get_booking_reference(self):
         """Get the booking reference based on booking type."""
         if self.booking:
-            return self.booking.booking_reference
+            # Unified Booking model uses UUID primary keys (no booking_reference field).
+            return getattr(self.booking, 'booking_reference', None) or f"BK-{str(self.booking_id)[:8].upper()}"
         elif self.flight_booking:
             return self.flight_booking.booking_reference
         elif self.car_rental_booking:

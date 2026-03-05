@@ -1,0 +1,437 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Employees - {{ business_account.company_name }} | Marvel Safari{% endblock %}
+
+{% block extra_head %}
+<style>
+    .filter-tab {
+        padding: 0.5rem 1rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .filter-tab.active {
+        background: var(--primary);
+        color: white;
+    }
+    .filter-tab:not(.active):hover {
+        background: var(--gray-100);
+    }
+    .employee-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+    .permission-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .permission-badge.approver {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+    .permission-badge.booker {
+        background: #dcfce7;
+        color: #166534;
+    }
+    .permission-badge.admin {
+        background: #fef3c7;
+        color: #92400e;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Team Members</h1>
+            <p class="text-gray-600 mt-1">Manage employees and their travel permissions</p>
+        </div>
+        <div class="flex gap-3">
+            <button class="btn btn-outline" onclick="exportEmployees()">
+                <i class="fa-solid fa-download"></i>
+                Export
+            </button>
+            <button class="btn btn-primary" onclick="openInviteModal()">
+                <i class="fa-solid fa-user-plus"></i>
+                Invite Employee
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid sm:grid-cols-4 gap-4 mb-8">
+        <div class="stat-card">
+            <p class="text-sm text-gray-500">Total Employees</p>
+            <p class="text-2xl font-bold text-gray-900">{{ employees.paginator.count }}</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-sm text-gray-500">Active Travelers</p>
+            <p class="text-2xl font-bold text-green-600">{{ active_travelers }}</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-sm text-gray-500">With Approval Rights</p>
+            <p class="text-2xl font-bold text-amber-600">{{ approvers_count }}</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-sm text-gray-500">Pending Invites</p>
+            <p class="text-2xl font-bold text-blue-600">{{ pending_invites }}</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex flex-wrap items-center gap-4 mb-6">
+        <div class="flex flex-wrap gap-2">
+            <span class="filter-tab active" data-filter="all">All</span>
+            <span class="filter-tab" data-filter="active">Active</span>
+            <span class="filter-tab" data-filter="approvers">Approvers</span>
+            <span class="filter-tab" data-filter="travelers">Travelers</span>
+            <span class="filter-tab" data-filter="inactive">Inactive</span>
+        </div>
+        <div class="flex-1"></div>
+        <div class="relative">
+            <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input type="text" 
+                   id="employeeSearch" 
+                   placeholder="Search employees..." 
+                   class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20">
+        </div>
+    </div>
+
+    <!-- Employee Grid -->
+    <div class="employee-grid" id="employeeGrid">
+        {% for employee in employees %}
+        <div class="card employee-card" 
+             data-status="{% if employee.is_active %}active{% else %}inactive{% endif %}"
+             data-role="{% if employee.can_approve %}approver{% else %}booker{% endif %}"
+             data-can-book="{{ employee.can_book|yesno:'1,0' }}"
+             data-department="{{ employee.department.id|default:'' }}">
+            
+            <!-- Card Header -->
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="avatar" style="background: linear-gradient(135deg, #0a4d8c, #18b0a5)">
+                        {{ employee.user.email|first|upper }}
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">
+                            {{ employee.user.get_full_name|default:employee.user.email }}
+                        </h3>
+                        <p class="text-xs text-gray-500">{{ employee.job_title|default:"Team Member" }}</p>
+                    </div>
+                </div>
+                <div class="dropdown relative">
+                    <button class="p-2 hover:bg-gray-100 rounded-lg" onclick="toggleDropdown(this)">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
+                    <div class="dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 z-10">
+                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                            <i class="fa-regular fa-pen-to-square w-5"></i> Edit Profile
+                        </a>
+                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                            <i class="fa-regular fa-clock w-5"></i> View Activity
+                        </a>
+                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                            <i class="fa-regular fa-chart-bar w-5"></i> Travel Stats
+                        </a>
+                        <hr class="my-1 border-gray-100">
+                        <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                            <i class="fa-regular fa-trash-can w-5"></i> Deactivate
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employee Details -->
+            <div class="space-y-2 mb-4">
+                <div class="flex items-center text-sm">
+                    <i class="fa-regular fa-id-card w-6 text-gray-400"></i>
+                    <span class="text-gray-600">ID:</span>
+                    <span class="ml-2 font-mono text-sm text-gray-900">{{ employee.employee_id|default:"Not set" }}</span>
+                </div>
+                <div class="flex items-center text-sm">
+                    <i class="fa-regular fa-building w-6 text-gray-400"></i>
+                    <span class="text-gray-600">Department:</span>
+                    <span class="ml-2 text-gray-900">{{ employee.department.name|default:"Unassigned" }}</span>
+                </div>
+                <div class="flex items-center text-sm">
+                    <i class="fa-regular fa-envelope w-6 text-gray-400"></i>
+                    <span class="text-gray-600">Email:</span>
+                    <span class="ml-2 text-gray-900 truncate">{{ employee.user.email }}</span>
+                </div>
+            </div>
+
+            <!-- Permissions -->
+            <div class="flex flex-wrap gap-2 mb-4">
+                {% if employee.can_approve %}
+                <span class="permission-badge approver">
+                    <i class="fa-regular fa-circle-check"></i> Approver
+                    {% if employee.approval_limit %}
+                    <span class="ml-1 text-xs">(${{ employee.approval_limit|floatformat:0 }})</span>
+                    {% endif %}
+                </span>
+                {% endif %}
+                {% if employee.can_book %}
+                <span class="permission-badge booker">
+                    <i class="fa-regular fa-calendar"></i> Can Book
+                </span>
+                {% endif %}
+                {% if not employee.is_active %}
+                <span class="permission-badge" style="background:#f3f4f6; color:#6b7280;">
+                    <i class="fa-regular fa-circle"></i> Inactive
+                </span>
+                {% endif %}
+            </div>
+
+            <!-- Travel Preferences Preview -->
+            <div class="border-t border-gray-100 pt-3">
+                <div class="flex items-center justify-between text-xs text-gray-500">
+                    <span><i class="fa-solid fa-plane-departure mr-1"></i> {{ employee.travel_class|default:"Economy"|title }}</span>
+                    <span><i class="fa-solid fa-hotel mr-1"></i> {{ employee.hotel_preference.star_rating|default:"3" }}*</span>
+                    <span><i class="fa-solid fa-car mr-1"></i> {{ employee.car_rental_preference.car_type|default:"Standard" }}</span>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="mt-4 flex gap-2">
+                <button class="btn btn-outline flex-1 text-sm" onclick="impersonateEmployee('{{ employee.id }}')">
+                    <i class="fa-regular fa-eye"></i>
+                    View as
+                </button>
+                <button class="btn btn-outline flex-1 text-sm" onclick="messageEmployee('{{ employee.user.email }}')">
+                    <i class="fa-regular fa-message"></i>
+                    Message
+                </button>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-12">
+            <div class="text-6xl mb-4"><i class="fa-solid fa-users"></i></div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">No employees yet</h3>
+            <p class="text-gray-600 mb-6">Invite your team members to start managing business travel</p>
+            <button class="btn btn-primary" onclick="openInviteModal()">
+                <i class="fa-solid fa-user-plus"></i>
+                Invite First Employee
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if employees.paginator.num_pages > 1 %}
+    <div class="flex justify-center mt-8">
+        <div class="flex gap-2">
+            {% if employees.has_previous %}
+            <a href="?page={{ employees.previous_page_number }}" class="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <i class="fa-solid fa-chevron-left"></i>
+            </a>
+            {% endif %}
+            
+            {% for i in employees.paginator.page_range %}
+                {% if employees.number == i %}
+                <span class="px-4 py-2 bg-primary text-white rounded-lg">{{ i }}</span>
+                {% else %}
+                <a href="?page={{ i }}" class="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">{{ i }}</a>
+                {% endif %}
+            {% endfor %}
+            
+            {% if employees.has_next %}
+            <a href="?page={{ employees.next_page_number }}" class="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Invite Employee Modal -->
+<div id="inviteModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold">Invite Team Member</h2>
+            <button class="text-gray-400 hover:text-gray-600" onclick="closeInviteModal()">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+        
+        <form method="post" action="{% url 'business:invite_employee' %}" class="space-y-4">
+            {% csrf_token %}
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                <input type="email" name="email" required 
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary/20"
+                       placeholder="colleague@company.com">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Employee ID</label>
+                <input type="text" name="employee_id" 
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2"
+                       placeholder="EMP-001">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
+                <input type="text" name="job_title" 
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2"
+                       placeholder="e.g. Senior Developer">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                <select name="department" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                    <option value="">Select department</option>
+                    {% for department in departments %}
+                    <option value="{{ department.id }}">{{ department.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="border-t border-gray-100 pt-4">
+                <h3 class="font-medium mb-3">Permissions</h3>
+                
+                <label class="flex items-center gap-3 mb-2">
+                    <input type="checkbox" name="can_book" checked class="rounded text-primary">
+                    <span class="text-sm text-gray-700">Can book travel</span>
+                </label>
+                
+                <label class="flex items-center gap-3">
+                    <input type="checkbox" name="can_approve" class="rounded text-primary">
+                    <span class="text-sm text-gray-700">Can approve requests</span>
+                </label>
+                
+                <div id="approvalLimitField" class="mt-3 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Approval Limit ($)</label>
+                    <input type="number" name="approval_limit" step="0.01" min="0"
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2"
+                           placeholder="5000.00">
+                </div>
+            </div>
+
+            <div class="border-t border-gray-100 pt-4">
+                <h3 class="font-medium mb-3">Travel Preferences (Optional)</h3>
+                
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Preferred Travel Class</label>
+                    <select name="travel_class" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                        <option value="economy">Economy</option>
+                        <option value="premium_economy">Premium Economy</option>
+                        <option value="business">Business</option>
+                        <option value="first">First Class</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-6">
+                <button type="submit" class="btn btn-primary flex-1">Send Invitation</button>
+                <button type="button" class="btn btn-outline flex-1" onclick="closeInviteModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Toggle dropdown
+function toggleDropdown(button) {
+    const dropdown = button.nextElementSibling;
+    dropdown.classList.toggle('hidden');
+    
+    // Close other dropdowns
+    document.addEventListener('click', function closeMenu(e) {
+        if (!button.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.add('hidden');
+            document.removeEventListener('click', closeMenu);
+        }
+    });
+}
+
+// Filter functionality
+document.querySelectorAll('.filter-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        
+        const filter = this.dataset.filter;
+        filterEmployees(filter, document.getElementById('employeeSearch').value);
+    });
+});
+
+// Search functionality
+document.getElementById('employeeSearch').addEventListener('input', function(e) {
+    const activeFilter = document.querySelector('.filter-tab.active').dataset.filter;
+    filterEmployees(activeFilter, e.target.value);
+});
+
+function filterEmployees(filter, search) {
+    const cards = document.querySelectorAll('.employee-card');
+    
+    cards.forEach(card => {
+        let show = true;
+        
+        // Apply filter
+        if (filter === 'active' && card.dataset.status !== 'active') show = false;
+        if (filter === 'approvers' && card.dataset.role !== 'approver') show = false;
+        if (filter === 'travelers' && card.dataset.canBook !== '1') show = false;
+        if (filter === 'inactive' && card.dataset.status !== 'inactive') show = false;
+        
+        // Apply search
+        if (show && search) {
+            const text = card.textContent.toLowerCase();
+            if (!text.includes(search.toLowerCase())) show = false;
+        }
+        
+        card.style.display = show ? 'block' : 'none';
+    });
+}
+
+// Show approval limit field when "can approve" is checked
+document.querySelector('input[name="can_approve"]').addEventListener('change', function() {
+    document.getElementById('approvalLimitField').style.display = this.checked ? 'block' : 'none';
+});
+
+// Modal functions
+function openInviteModal() {
+    document.getElementById('inviteModal').classList.remove('hidden');
+    document.getElementById('inviteModal').classList.add('flex');
+}
+
+function closeInviteModal() {
+    document.getElementById('inviteModal').classList.add('hidden');
+    document.getElementById('inviteModal').classList.remove('flex');
+}
+
+function exportEmployees() {
+    window.location.href = "{% url 'business:export_employees' %}?format=csv";
+}
+
+function impersonateEmployee(employeeId) {
+    // Implement view-as functionality
+    window.location.href = `/business/impersonate/${employeeId}/`;
+}
+
+function messageEmployee(email) {
+    window.location.href = `mailto:${encodeURIComponent(email)}`;
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('inviteModal');
+    if (event.target === modal) {
+        closeInviteModal();
+    }
+}
+</script>
+{% endblock %}
+

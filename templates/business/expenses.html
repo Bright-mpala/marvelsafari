@@ -1,0 +1,429 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Expense Reports - {{ business_account.company_name }} | Marvel Safari{% endblock %}
+
+{% block extra_head %}
+<style>
+    .expense-status {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .status-draft { background: #f3f4f6; color: #374151; }
+    .status-submitted { background: #dbeafe; color: #1e40af; }
+    .status-approved { background: #d1fae5; color: #065f46; }
+    .status-rejected { background: #fee2e2; color: #991b1b; }
+    .status-paid { background: #dcfce7; color: #166534; }
+    
+    .expense-item {
+        transition: background-color 0.2s;
+    }
+    .expense-item:hover {
+        background-color: #f9fafb;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Expense Reports</h1>
+            <p class="text-gray-600 mt-1">Track and manage employee expenses</p>
+        </div>
+        <div class="flex gap-3">
+            <button class="btn btn-outline" onclick="exportExpenses()">
+                <i class="fa-solid fa-download"></i>
+                Export
+            </button>
+            <button class="btn btn-primary" onclick="openCreateExpenseModal()">
+                <i class="fa-solid fa-plus"></i>
+                New Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters and Summary -->
+    <div class="flex flex-wrap items-center gap-4 mb-6">
+        <div class="flex bg-gray-100 rounded-lg p-1">
+            <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium" data-filter="all">All</button>
+            <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium" data-filter="pending">Pending</button>
+            <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium" data-filter="approved">Approved</button>
+            <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium" data-filter="paid">Paid</button>
+        </div>
+        <div class="flex-1"></div>
+        <div class="relative">
+            <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input type="text" id="searchExpenses" placeholder="Search reports..." 
+                   class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20">
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid sm:grid-cols-4 gap-4 mb-8">
+        <div class="stat-card">
+            <p class="text-sm text-gray-500">Total Pending</p>
+            <p class="text-2xl font-bold text-amber-600">{{ pending_total|default:"$2,450" }}</p>
+            <p class="text-xs text-gray-400 mt-1">{{ pending_count|default:"8" }} reports</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-sm text-gray-500">Approved</p>
+            <p class="text-2xl font-bold text-green-600">{{ approved_total|default:"$5,820" }}</p>
+            <p class="text-xs text-gray-400 mt-1">{{ approved_count|default:"12" }} reports</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-sm text-gray-500">Paid This Month</p>
+            <p class="text-2xl font-bold text-blue-600">{{ paid_total|default:"$3,150" }}</p>
+            <p class="text-xs text-gray-400 mt-1">{{ paid_count|default:"6" }} reports</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-sm text-gray-500">Average Report</p>
+            <p class="text-2xl font-bold text-gray-900">${{ avg_amount|default:"487" }}</p>
+            <p class="text-xs text-gray-400 mt-1">per expense report</p>
+        </div>
+    </div>
+
+    <!-- Expense Reports List -->
+    <div class="space-y-4">
+        {% for report in expense_reports %}
+        <div class="card expense-report" data-status="{{ report.status }}" data-id="{{ report.id }}">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <!-- Report Info -->
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="expense-status status-{{ report.status }}">
+                            <i class="fa-regular fa-circle-{% if report.status == 'approved' %}check{% elif report.status == 'pending' %}clock{% elif report.status == 'paid' %}check{% else %}xmark{% endif %} mr-1"></i>
+                            {{ report.get_status_display }}
+                        </span>
+                        <span class="text-sm text-gray-500">Report #{{ report.report_number }}</span>
+                    </div>
+                    
+                    <h3 class="text-lg font-semibold text-gray-900 mb-1">{{ report.title }}</h3>
+                    
+                    <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                        <span>
+                            <i class="fa-regular fa-user mr-1"></i>
+                            {{ report.employee.user.get_full_name|default:report.employee.user.email }}
+                        </span>
+                        <span>
+                            <i class="fa-regular fa-calendar mr-1"></i>
+                            {{ report.start_date|date:"M d" }} - {{ report.end_date|date:"M d, Y" }}
+                        </span>
+                        <span>
+                            <i class="fa-regular fa-clock mr-1"></i>
+                            Submitted {{ report.submitted_at|timesince }} ago
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Amount and Actions -->
+                <div class="text-right">
+                    <p class="text-2xl font-bold text-gray-900">${{ report.total_amount|floatformat:2 }}</p>
+                    {% if report.approved_amount and report.approved_amount != report.total_amount %}
+                    <p class="text-sm text-gray-500 line-through">${{ report.total_amount|floatformat:2 }}</p>
+                    <p class="text-sm text-green-600">Approved: ${{ report.approved_amount|floatformat:2 }}</p>
+                    {% endif %}
+                    
+                    <div class="flex gap-2 mt-3">
+                        <button class="btn btn-outline btn-sm" onclick="viewReport('{{ report.id }}')">
+                            <i class="fa-regular fa-eye"></i>
+                            View
+                        </button>
+                        {% if report.status == 'draft' or report.status == 'rejected' %}
+                        <button class="btn btn-outline btn-sm" onclick="editReport('{{ report.id }}')">
+                            <i class="fa-regular fa-pen-to-square"></i>
+                            Edit
+                        </button>
+                        {% endif %}
+                        {% if report.status == 'submitted' %}
+                        <button class="btn btn-primary btn-sm" onclick="approveReport('{{ report.id }}')">
+                            <i class="fa-regular fa-circle-check"></i>
+                            Approve
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expense Items Preview -->
+            <div class="mt-4 pt-4 border-t border-gray-100">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-medium text-gray-700">Expense items</span>
+                    <span class="text-xs text-gray-500">{{ report.items.count }} items</span>
+                </div>
+                <div class="space-y-2">
+                    {% for item in report.items.all|slice:":3" %}
+                    <div class="expense-item flex items-center justify-between text-sm p-2 rounded">
+                        <div class="flex items-center gap-3">
+                            <span class="w-16 text-xs text-gray-500">{{ item.date|date:"M d" }}</span>
+                            <span class="text-gray-600">{{ item.description|truncatechars:30 }}</span>
+                        </div>
+                        <span class="font-medium">${{ item.amount|floatformat:2 }}</span>
+                    </div>
+                    {% endfor %}
+                    {% if report.items.count > 3 %}
+                    <div class="text-xs text-center text-gray-500">
+                        +{{ report.items.count|add:"-3" }} more items
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Approval Info -->
+            {% if report.approver %}
+            <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-sm">
+                <div class="flex items-center gap-2">
+                    <i class="fa-regular fa-circle-check text-green-500"></i>
+                    <span class="text-gray-600">Approved by {{ report.approver.get_full_name }}</span>
+                    <span class="text-gray-400">{{ report.approval_date|date:"M d, Y" }}</span>
+                </div>
+                {% if report.paid_date %}
+                <span class="text-gray-600">
+                    <i class="fa-regular fa-clock"></i>
+                    Paid on {{ report.paid_date|date:"M d, Y" }}
+                </span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="card text-center py-12">
+            <div class="text-6xl mb-4">📄</div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">No expense reports</h3>
+            <p class="text-gray-600 mb-6">Create your first expense report to track business expenses</p>
+            <button class="btn btn-primary" onclick="openCreateExpenseModal()">
+                <i class="fa-solid fa-plus"></i>
+                Create Expense Report
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if expense_reports.paginator.num_pages > 1 %}
+    <div class="flex justify-center mt-8">
+        <div class="flex gap-2">
+            {% if expense_reports.has_previous %}
+            <a href="?page={{ expense_reports.previous_page_number }}" class="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <i class="fa-solid fa-chevron-left"></i>
+            </a>
+            {% endif %}
+            
+            {% for i in expense_reports.paginator.page_range %}
+                {% if expense_reports.number == i %}
+                <span class="px-4 py-2 bg-primary text-white rounded-lg">{{ i }}</span>
+                {% else %}
+                <a href="?page={{ i }}" class="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">{{ i }}</a>
+                {% endif %}
+            {% endfor %}
+            
+            {% if expense_reports.has_next %}
+            <a href="?page={{ expense_reports.next_page_number }}" class="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Create Expense Modal -->
+<div id="expenseModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold">Create Expense Report</h2>
+            <button class="text-gray-400 hover:text-gray-600" onclick="closeExpenseModal()">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+        
+        <form method="post" action="{% url 'business:create_expense' %}" enctype="multipart/form-data" class="space-y-4">
+            {% csrf_token %}
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Report Title</label>
+                <input type="text" name="title" required 
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2"
+                       placeholder="e.g. Q4 Sales Trip to Nairobi">
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                    <input type="date" name="start_date" required 
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                    <input type="date" name="end_date" required 
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea name="description" rows="3" 
+                          class="w-full border border-gray-300 rounded-lg px-4 py-2"
+                          placeholder="Brief description of the trip purpose"></textarea>
+            </div>
+
+            <div class="border-t border-gray-200 pt-4">
+                <h3 class="font-semibold mb-3">Expense Items</h3>
+                <div id="expenseItems">
+                    <!-- Dynamic expense items will be added here -->
+                </div>
+                <button type="button" class="btn btn-outline text-sm mt-2" onclick="addExpenseItem()">
+                    <i class="fa-solid fa-plus"></i>
+                    Add Expense Item
+                </button>
+            </div>
+
+            <div class="border-t border-gray-200 pt-4">
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" name="submit_for_approval">
+                    <span class="text-sm text-gray-700">Submit for approval immediately</span>
+                </label>
+            </div>
+
+            <div class="flex gap-3 pt-4">
+                <button type="submit" class="btn btn-primary flex-1">Create Report</button>
+                <button type="button" class="btn btn-outline flex-1" onclick="closeExpenseModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let expenseItemCount = 0;
+
+function openCreateExpenseModal() {
+    document.getElementById('expenseModal').classList.remove('hidden');
+    document.getElementById('expenseModal').classList.add('flex');
+    addExpenseItem(); // Add first item by default
+}
+
+function closeExpenseModal() {
+    document.getElementById('expenseModal').classList.add('hidden');
+    document.getElementById('expenseModal').classList.remove('flex');
+    // Clear items
+    document.getElementById('expenseItems').innerHTML = '';
+    expenseItemCount = 0;
+}
+
+function addExpenseItem() {
+    expenseItemCount++;
+    const container = document.getElementById('expenseItems');
+    const div = document.createElement('div');
+    div.className = 'expense-item-form border border-gray-200 rounded-lg p-4 mb-3';
+    div.innerHTML = `
+        <div class="flex justify-between mb-2">
+            <span class="font-medium">Item #${expenseItemCount}</span>
+            <button type="button" class="text-red-500 hover:text-red-700" onclick="this.closest('.expense-item-form').remove()">
+                <i class="fa-regular fa-trash-can"></i>
+            </button>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-3">
+            <div>
+                <label class="block text-xs text-gray-600 mb-1">Date</label>
+                <input type="date" name="item_date_${expenseItemCount}" required 
+                       class="w-full border border-gray-300 rounded-lg px-3 py-1 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-600 mb-1">Category</label>
+                <select name="item_category_${expenseItemCount}" class="w-full border border-gray-300 rounded-lg px-3 py-1 text-sm">
+                    <option value="accommodation">Accommodation</option>
+                    <option value="transportation">Transportation</option>
+                    <option value="meals">Meals</option>
+                    <option value="entertainment">Entertainment</option>
+                    <option value="supplies">Supplies</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="sm:col-span-2">
+                <label class="block text-xs text-gray-600 mb-1">Description</label>
+                <input type="text" name="item_description_${expenseItemCount}" required 
+                       placeholder="What was this expense for?"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-1 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-600 mb-1">Amount</label>
+                <input type="number" name="item_amount_${expenseItemCount}" step="0.01" required 
+                       class="w-full border border-gray-300 rounded-lg px-3 py-1 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-600 mb-1">Receipt</label>
+                <input type="file" name="item_receipt_${expenseItemCount}" accept="image/*,.pdf"
+                       class="w-full text-sm">
+            </div>
+        </div>
+    `;
+    container.appendChild(div);
+}
+
+function viewReport(reportId) {
+    window.location.href = `/business/expenses/${reportId}/`;
+}
+
+function editReport(reportId) {
+    window.location.href = `/business/expenses/${reportId}/edit/`;
+}
+
+function approveReport(reportId) {
+    if (confirm('Approve this expense report?')) {
+        window.location.href = `/business/expenses/${reportId}/approve/`;
+    }
+}
+
+function exportExpenses() {
+    window.location.href = "{% url 'business:export_expenses' %}?format=csv";
+}
+
+// Filter functionality
+document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('bg-white', 'shadow'));
+        this.classList.add('bg-white', 'shadow');
+        
+        const filter = this.dataset.filter;
+        filterReports(filter, document.getElementById('searchExpenses').value);
+    });
+});
+
+document.getElementById('searchExpenses').addEventListener('input', function(e) {
+    const activeFilter = document.querySelector('.filter-btn.bg-white')?.dataset.filter || 'all';
+    filterReports(activeFilter, e.target.value);
+});
+
+function filterReports(filter, search) {
+    const reports = document.querySelectorAll('.expense-report');
+    
+    reports.forEach(report => {
+        let show = true;
+        
+        if (filter !== 'all' && report.dataset.status !== filter) {
+            show = false;
+        }
+        
+        if (show && search) {
+            const text = report.textContent.toLowerCase();
+            if (!text.includes(search.toLowerCase())) show = false;
+        }
+        
+        report.style.display = show ? 'block' : 'none';
+    });
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('expenseModal');
+    if (event.target === modal) {
+        closeExpenseModal();
+    }
+}
+</script>
+{% endblock %}

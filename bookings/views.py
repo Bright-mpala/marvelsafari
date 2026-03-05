@@ -121,7 +121,7 @@ def booking_create(request, property_id):
                         html_body = render_to_string('bookings/emails/booking_confirmation.html', context)
 
                         send_mail(
-                            subject=_('Your booking is confirmed'),
+                            subject=_('Your booking request was received'),
                             message=text_body,
                             from_email=settings.DEFAULT_FROM_EMAIL,
                             recipient_list=[request.user.email],
@@ -131,7 +131,7 @@ def booking_create(request, property_id):
 
                     messages.success(
                         request,
-                        _('Booking created successfully! Total: ${:.2f}').format(booking.total_amount)
+                        _('Booking request submitted successfully! Estimated total: ${:.2f}').format(booking.total_amount)
                     )
                     return redirect('bookings:detail', pk=booking.pk)
             except Exception as e:

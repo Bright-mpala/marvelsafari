@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Expense Report {{ report.report_number }} - {{ business_account.company_name }} | Marvel Safari{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div>
+            <a href="{% url 'business:expenses' %}" class="text-primary hover:underline mb-2 inline-block">
+                <i class="fa-solid fa-arrow-left mr-1"></i> Back to Expenses
+            </a>
+            <h1 class="text-3xl font-bold text-gray-900">{{ report.title }}</h1>
+            <p class="text-gray-600">Report #{{ report.report_number }}</p>
+        </div>
+        <div class="flex gap-2">
+            <span class="expense-status status-{{ report.status }} text-lg px-4 py-2">
+                {{ report.get_status_display }}
+            </span>
+            {% if report.status == 'draft' or report.status == 'rejected' %}
+            <a href="{% url 'business:edit_expense' report.id %}" class="btn btn-primary">
+                <i class="fa-regular fa-pen-to-square"></i>
+                Edit Report
+            </a>
+            {% endif %}
+            {% if report.status == 'submitted' and request.user.can_approve_business %}
+            <button class="btn btn-success" onclick="approveReport('{{ report.id }}')">
+                <i class="fa-regular fa-circle-check"></i>
+                Approve
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Report Details -->
+    <div class="grid lg:grid-cols-3 gap-6">
+        <!-- Main Content -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Expense Items -->
+            <div class="card">
+                <h2 class="text-xl font-semibold mb-4">Expense Items</h2>
+                <div class="space-y-4">
+                    {% for item in items %}
+                    <div class="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <p class="font-medium">{{ item.description }}</p>
+                                <p class="text-sm text-gray-500">{{ item.date|date:"M d, Y" }} • {{ item.get_category_display }}</p>
+                            </div>
+                            <p class="text-lg font-semibold">${{ item.amount|floatformat:2 }}</p>
+                        </div>
+                        {% if item.receipt_image %}
+                        <a href="{{ item.receipt_image.url }}" target="_blank" class="text-sm text-primary hover:underline">
+                            <i class="fa-regular fa-file-pdf mr-1"></i> View Receipt
+                        </a>
+                        {% endif %}
+                        {% if item.business_purpose %}
+                        <p class="text-sm text-gray-600 mt-2">{{ item.business_purpose }}</p>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-500 text-center py-4">No expense items found.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- Summary Card -->
+            <div class="card bg-primary/5 border-primary/20">
+                <h3 class="font-semibold mb-4">Summary</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Subtotal</span>
+                        <span class="font-medium">${{ report.total_amount|floatformat:2 }}</span>
+                    </div>
+                    {% if report.approved_amount and report.approved_amount != report.total_amount %}
+                    <div class="flex justify-between text-green-600">
+                        <span>Approved Amount</span>
+                        <span class="font-semibold">${{ report.approved_amount|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Number of Items</span>
+                        <span class="font-medium">{{ items|length }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Date Range</span>
+                        <span class="font-medium">{{ report.start_date|date:"M d" }} - {{ report.end_date|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employee Info -->
+            <div class="card">
+                <h3 class="font-semibold mb-4">Employee</h3>
+                <div class="flex items-center gap-3">
+                    <div class="avatar">
+                        {{ report.employee.user.email|first|upper }}
+                    </div>
+                    <div>
+                        <p class="font-medium">{{ report.employee.user.get_full_name|default:report.employee.user.email }}</p>
+                        <p class="text-sm text-gray-500">{{ report.employee.job_title|default:"Team Member" }}</p>
+                        <p class="text-xs text-gray-400">{{ report.employee.department.name|default:"No Department" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Approval Info -->
+            {% if report.approver %}
+            <div class="card">
+                <h3 class="font-semibold mb-4">Approval Details</h3>
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-regular fa-circle-check text-green-500"></i>
+                        <span>Approved by {{ report.approver.get_full_name }}</span>
+                    </div>
+                    <p class="text-sm text-gray-500 ml-6">{{ report.approval_date|date:"M d, Y H:i" }}</p>
+                    {% if report.approval_notes %}
+                    <p class="text-sm bg-gray-50 p-3 rounded-lg mt-2">{{ report.approval_notes }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Payment Info -->
+            {% if report.paid_date %}
+            <div class="card">
+                <h3 class="font-semibold mb-4">Payment Details</h3>
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Paid Date</span>
+                        <span>{{ report.paid_date|date:"M d, Y" }}</span>
+                    </div>
+                    {% if report.payment_reference %}
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Reference</span>
+                        <span class="font-mono text-sm">{{ report.payment_reference }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function approveReport(reportId) {
+    if (confirm('Approve this expense report?')) {
+        window.location.href = `/business/expenses/${reportId}/approve/`;
+    }
+}
+</script>
+{% endblock %}

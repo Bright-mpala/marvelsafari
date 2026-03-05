@@ -18,7 +18,31 @@ MANAGE_PY_DIR = BASE_DIR  # Same as BASE_DIR - where manage.py is located
 
 ENVIRONMENT = config('ENVIRONMENT', default='development')
 SECRET_KEY = config('SECRET_KEY', default='change-me-in-production')
-DEBUG = config('DEBUG', default=False, cast=bool)
+
+
+def _env_bool(name, default=False):
+    """
+    Parse boolean environment flags defensively.
+
+    Accepts common CI/ops values and treats unknown values as the provided
+    default instead of crashing settings import.
+    """
+    raw_value = config(name, default=str(default))
+    if isinstance(raw_value, bool):
+        return raw_value
+
+    value = str(raw_value).strip().lower()
+    truthy = {'1', 'true', 't', 'yes', 'y', 'on'}
+    falsy = {'0', 'false', 'f', 'no', 'n', 'off', '', 'release', 'prod', 'production'}
+
+    if value in truthy:
+        return True
+    if value in falsy:
+        return False
+    return default
+
+
+DEBUG = _env_bool('DEBUG', default=False)
 
 # Allow configurable host list; default to all for convenience (override in env vars for prod)
 ALLOWED_HOSTS = [
@@ -237,7 +261,6 @@ ACCOUNT_EMAIL_SUBJECT_PREFIX = '[MarvelSafari] '
 
 # Use email-only authentication with custom user model (no username field)
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
-ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_USER_MODEL_EMAIL_FIELD = 'email'
 
 # Social Account Settings
@@ -586,3 +609,6 @@ ENABLE_METRICS = True
 
 # Stripe (do not implement for this task)
 STRIPE_ENABLED = False
+
+# Booking/payment behavior
+BOOKING_REQUIRE_PAYMENT = _env_bool('BOOKING_REQUIRE_PAYMENT', default=False)
