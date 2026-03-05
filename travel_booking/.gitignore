@@ -1,6 +1,39 @@
-db.sqlite3
-*.sqlite3
+# Django
+*.log
+*.pot
 *.pyc
 __pycache__/
+
+# Database
+db.sqlite3
+db.sqlite3-journal
+
+# Environment variables
 .env
-*.env
+.env.*
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Static files
+staticfiles/
+
+# Media uploads
+media/
+
+# Python cache
+*.pyo
+*.pyd
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# PythonAnywhere
+*.sock
