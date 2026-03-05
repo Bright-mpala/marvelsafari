@@ -1,9 +1,0 @@
-Hi {{ user_name }},
-
-Your booking for {{ listing_label }} has been approved.
-{% if date_info %}
-Dates: {{ date_info }}
-{% endif %}
-You can view your trip details in your Marvel Safari account.
-
-Marvel Safari Team
